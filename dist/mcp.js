@@ -39,7 +39,7 @@ export function createMcpServer() {
             ],
         };
     });
-    server.registerTool("chrome_get_page_content", {
+    server.registerTool("chrome_read_tab_content", {
         description: "Get readable content from a Chrome tab. If tabId is omitted, uses the currently active tab.",
         inputSchema: {
             tabId: z

@@ -50,7 +50,7 @@ export function createMcpServer(): McpServer {
   );
 
   server.registerTool(
-    "chrome_get_page_content",
+    "chrome_read_tab_content",
     {
       description:
         "Get readable content from a Chrome tab. If tabId is omitted, uses the currently active tab.",
