@@ -37,7 +37,7 @@ export function createMcpServer(): McpServer {
       const formatter = (t: chrome.ChromeTab) =>
         `- ${toTabId(t)}: [${t.title}](${t.url})`;
       const list = tabs.map(formatter).join("\n");
-      const header = `### Open Chrome Tabs\n\n${tabs.length} tabs found:\n`;
+      const header = `### Open Chrome Tabs (${tabs.length} tabs found)\n`;
       return {
         content: [
           {

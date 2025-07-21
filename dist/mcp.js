@@ -14,7 +14,7 @@ function parseTabId(tabId) {
 }
 export function createMcpServer() {
     const server = new McpServer({
-        name: "chrome-tab-content",
+        name: "chrome-tabs",
         version: "0.1.0",
     }
     /* TODO: {
@@ -29,7 +29,7 @@ export function createMcpServer() {
         const tabs = await chrome.getChromeTabList();
         const formatter = (t) => `- ${toTabId(t)}: [${t.title}](${t.url})`;
         const list = tabs.map(formatter).join("\n");
-        const header = `### Open Chrome Tabs\n\n${tabs.length} tabs found:\n`;
+        const header = `### Open Chrome Tabs (${tabs.length} tabs found)\n`;
         return {
             content: [
                 {
