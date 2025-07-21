@@ -1,7 +1,6 @@
 {
   "name": "@pokutuna/mcp-chrome-content",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -9,11 +8,20 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@hono/mcp": "^0.1.0",
+    "@hono/node-server": "^1.17.1",
     "@modelcontextprotocol/sdk": "^1.16.0",
+    "@mozilla/readability": "^0.6.0",
+    "hono": "^4.8.5",
+    "jsdom": "^26.1.0",
+    "turndown": "^7.2.0",
+    "turndown-plugin-gfm": "^1.0.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^20.11.17",
+    "@types/turndown": "^5.0.5",
     "tsx": "^4.7.1",
     "typescript": "~5.8.3"
   }
