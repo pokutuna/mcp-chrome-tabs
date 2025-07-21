@@ -17,7 +17,7 @@ function parseTabId(tabId: string): chrome.TabRef | null {
 export function createMcpServer(): McpServer {
   const server = new McpServer(
     {
-      name: "chrome-tab-content",
+      name: "chrome-tabs",
       version: "0.1.0",
     }
     /* TODO: {

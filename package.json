@@ -1,11 +1,20 @@
 {
-  "name": "@pokutuna/mcp-chrome-content",
+  "name": "@pokutuna/mcp-chrome-tabs",
   "version": "0.1.0",
   "type": "module",
+  "bin": {
+    "mcp-chrome-tabs": "./dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "node --import tsx src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@hono/mcp": "^0.1.0",
