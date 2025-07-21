@@ -15,11 +15,22 @@ Model Context Protocol (MCP) server for extracting readable content from Chrome 
 > [!WARNING]
 > This project is currently under development. The distribution method is subject to change.
 
+```bash
+$ npx github:pokutuna/mcp-chrome-tabs
+```
+
+### For Claude Code
+
+```bash
+$ claude mcp add -s user chrome-tabs -- npx -y github:pokutuna/mcp-chrome-tabs
+```
+
 ## Requirements
 
 - macOS with Chrome installed (using AppleScript)
 - Enable "Allow JavaScript from Apple Events" in Chrome:
   - **View** > **Developer** > **Allow JavaScript from Apple Events**
+  - (ja) **表示** > **開発 / 管理** > **Apple Events からのJavaScript を許可**
 
 ## Tools
 
@@ -34,9 +45,3 @@ Extracts readable content from a tab.
 ### `chrome_open_url`
 Opens a URL in a new Chrome tab.
 - `url`: URL to open
-
-## For Claude Code
-
-```bash
-$ claude mcp add -s user chrome-tabs -- npx -y github:pokutuna/mcp-chrome-tabs
-```
