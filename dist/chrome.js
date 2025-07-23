@@ -17,13 +17,13 @@ export async function getChromeTabList() {
     const appleScript = `
     tell application "Google Chrome"
       set output to ""
-      repeat with w from 1 to count of windows
-        repeat with t from 1 to count of tabs of window w
-          set windowIdx to w
-          set tabIdx to t
-          set tabTitle to title of tab t of window w
-          set tabURL to URL of tab t of window w
-          set output to output & windowIdx & "${sep}" & tabIdx & "${sep}" & tabTitle & "${sep}" & tabURL & "\\n"
+      repeat with aWindow in (every window)
+        set windowId to id of aWindow
+        repeat with aTab in (every tab of aWindow)
+          set tabId to id of aTab
+          set tabTitle to title of aTab
+          set tabURL to URL of aTab
+          set output to output & windowId & "${sep}" & tabId & "${sep}" & tabTitle & "${sep}" & tabURL & "\\n"
         end repeat
       end repeat
       return output
@@ -37,8 +37,8 @@ export async function getChromeTabList() {
         if (!/^https?:\/\//.test(url))
             continue;
         tabs.push({
-            windowIndex: parseInt(wId, 10),
-            tabIndex: parseInt(tId, 10),
+            windowId: wId,
+            tabId: tId,
             title: title.trim(),
             url: url.trim(),
         });
@@ -55,28 +55,45 @@ export async function getPageContent(tab) {
   `;
     const appleScript = tab
         ? `
-      tell application "Google Chrome"
-        tell window ${tab.windowIndex}
-          tell tab ${tab.tabIndex}
-            ${inner}
+      try
+        tell application "Google Chrome"
+          tell window id "${tab.windowId}"
+            tell tab id "${tab.tabId}"
+              (* Chrome によって suspend されたタブで js を実行すると動作が停止する
+                 タイムアウトにより osascript コマンドの実行を retry したくないので
+                 apple script 内で timeout をしてエラーを返すようにする *)
+              with timeout of 3 seconds
+                ${inner}
+              end timeout
+            end tell
           end tell
         end tell
-        return "NOT_FOUND"
-      end tell
-  `
+      on error errMsg
+        return "ERROR" & "${sep}" & errMsg
+      end try
+    `
         : `
-      tell application "Google Chrome"
-        tell front window
-          tell active tab
-            ${inner}
-          end tell
+      try
+        tell application "Google Chrome"
+          repeat with w in windows
+            tell w
+              set t to tab (active tab index)
+              if URL of t is not "about:blank" then
+                tell t
+                  ${inner}
+                end tell
+              end if
+            end tell
+          end repeat
+          error "No active tab found"
         end tell
-        return "NOT_FOUND"
-      end tell
+      on error errMsg
+        return "ERROR" & "${sep}" & errMsg
+      end try
     `;
     const result = await executeAppleScript(appleScript);
-    if (result === "NOT_FOUND")
-        throw new Error("Tab not found");
+    if (result.startsWith(`ERROR${sep}`))
+        throw new Error(result.split(sep)[1]);
     const parts = result.split(sep).map((part) => part.trim());
     if (parts.length < 3)
         throw new Error("Failed to read the tab content");
@@ -125,7 +142,7 @@ async function retry(fn, options) {
 async function executeAppleScript(script) {
     return retry(async () => {
         const { stdout, stderr } = await execFileAsync("osascript", ["-e", script], {
-            timeout: 10 * 1000,
+            timeout: 5 * 1000,
             maxBuffer: 5 * 1024 * 1024, // 5MB
         });
         if (stderr)

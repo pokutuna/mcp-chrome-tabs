@@ -1,24 +1,36 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import * as chrome from "./chrome.js";
+import { readFile } from "fs/promises";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
-function toTabId(tab: chrome.ChromeTab): string {
-  return `id:${tab.windowIndex}:${tab.tabIndex}`;
+function formatTabRef(tab: chrome.ChromeTab): string {
+  return `ID:${tab.windowId}:${tab.tabId}`;
 }
 
-function parseTabId(tabId: string): chrome.TabRef | null {
-  const match = tabId.match(/^id:(\d+):(\d+)$/);
+function parseTabRef(tabRef: string): chrome.TabRef | null {
+  const match = tabRef.match(/ID:(\d+):(\d+)$/);
   if (!match) return null;
-  const windowIndex = parseInt(match[1], 10);
-  const tabIndex = parseInt(match[2], 10);
-  return { windowIndex, tabIndex };
+  const windowId = match[1];
+  const tabId = match[2];
+  return { windowId, tabId };
 }
 
-export function createMcpServer(): McpServer {
+async function packageVersion(): Promise<string> {
+  const packageJsonText = await readFile(
+    join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
+    "utf8"
+  );
+  const packageJson = JSON.parse(packageJsonText);
+  return packageJson.version;
+}
+
+export async function createMcpServer(): Promise<McpServer> {
   const server = new McpServer(
     {
       name: "chrome-tabs",
-      version: "0.1.0",
+      version: await packageVersion(),
     }
     /* TODO: {
       capabilities: { resources: {} },
@@ -35,9 +47,9 @@ export function createMcpServer(): McpServer {
     async () => {
       const tabs = await chrome.getChromeTabList();
       const formatter = (t: chrome.ChromeTab) =>
-        `- ${toTabId(t)}: [${t.title}](${t.url})`;
+        `- ${formatTabRef(t)} [${t.title}](${t.url})`;
       const list = tabs.map(formatter).join("\n");
-      const header = `### Open Chrome Tabs (${tabs.length} tabs found)\n`;
+      const header = `### Current Tabs (${tabs.length} tabs exists)\n`;
       return {
         content: [
           {
@@ -59,19 +71,20 @@ export function createMcpServer(): McpServer {
           .string()
           .optional()
           .describe(
-            "Tab ID in the format `id:{windowIndex}:{tabIndex}`. If omitted, uses the currently active tab."
+            "Tab ID in the format `ID:{windowId}:{tabId}`. If omitted, uses the currently active tab."
           ),
       },
     },
     async (args) => {
       const { tabId } = args;
-      const tabRef = tabId ? parseTabId(tabId) : null;
-      const pageContent = await chrome.getPageContent(tabRef);
+      const tabRef = tabId ? parseTabRef(tabId) : null;
+      const page = await chrome.getPageContent(tabRef);
+      const content = `---\n${page.title}\n---\n\n${page.content}`;
       return {
         content: [
           {
             type: "text",
-            text: pageContent.content,
+            text: content,
           },
         ],
       };
@@ -81,7 +94,7 @@ export function createMcpServer(): McpServer {
   server.registerTool(
     "chrome_open_url",
     {
-      description: "Open a URL in Chrome",
+      description: "Open a URL in user's Chrome browser",
       inputSchema: {
         url: z.string().url().describe("URL to open in Chrome"),
       },
@@ -94,7 +107,7 @@ export function createMcpServer(): McpServer {
         content: [
           {
             type: "text",
-            text: `Successfully opened URL: ${url}`,
+            text: `Successfully opened the URL`,
           },
         ],
       };

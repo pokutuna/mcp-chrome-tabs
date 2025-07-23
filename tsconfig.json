@@ -1,25 +1,24 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "es2024",
     "module": "nodenext",
-    "useDefineForClassFields": true,
-    "lib": [
-      "ESNext",
-    ],
-    "verbatimModuleSyntax": true,
+    "moduleResolution": "nodenext",
     "strict": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "skipLibCheck": true,
     "outDir": "./dist"
   },
   "include": [
-    "src"
+    "src/**/*"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }
