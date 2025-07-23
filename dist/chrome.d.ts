@@ -11,6 +11,6 @@ export type PageContent = {
     url: string;
     content: string;
 };
-export declare function getChromeTabList(): Promise<ChromeTab[]>;
-export declare function getPageContent(tab?: TabRef | null): Promise<PageContent>;
-export declare function openURL(url: string): Promise<void>;
+export declare function getChromeTabList(applicationName: string): Promise<ChromeTab[]>;
+export declare function getPageContent(applicationName: string, tab?: TabRef | null): Promise<PageContent>;
+export declare function openURL(applicationName: string, url: string): Promise<void>;

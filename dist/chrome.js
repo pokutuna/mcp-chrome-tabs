@@ -12,10 +12,10 @@ function escapeAppleScript(str) {
         .replace(/\n/g, "\\n")
         .replace(/\r/g, "\\r");
 }
-export async function getChromeTabList() {
+export async function getChromeTabList(applicationName) {
     const sep = separator();
     const appleScript = `
-    tell application "Google Chrome"
+    tell application "${applicationName}"
       set output to ""
       repeat with aWindow in (every window)
         set windowId to id of aWindow
@@ -45,7 +45,7 @@ export async function getChromeTabList() {
     }
     return tabs;
 }
-export async function getPageContent(tab) {
+export async function getPageContent(applicationName, tab) {
     const sep = separator();
     const inner = `
     set tabTitle to title
@@ -56,7 +56,7 @@ export async function getPageContent(tab) {
     const appleScript = tab
         ? `
       try
-        tell application "Google Chrome"
+        tell application "${applicationName}"
           tell window id "${tab.windowId}"
             tell tab id "${tab.tabId}"
               (* Chrome によって suspend されたタブで js を実行すると動作が停止する
@@ -74,7 +74,7 @@ export async function getPageContent(tab) {
     `
         : `
       try
-        tell application "Google Chrome"
+        tell application "${applicationName}"
           repeat with w in windows
             tell w
               set t to tab (active tab index)
@@ -114,10 +114,10 @@ export async function getPageContent(tab) {
         content: md,
     };
 }
-export async function openURL(url) {
+export async function openURL(applicationName, url) {
     const escapedUrl = escapeAppleScript(url);
     const appleScript = `
-    tell application "Google Chrome"
+    tell application "${applicationName}"
       open location "${escapedUrl}"
     end tell
   `;

@@ -28,10 +28,12 @@ function escapeAppleScript(str: string): string {
     .replace(/\r/g, "\\r");
 }
 
-export async function getChromeTabList(): Promise<ChromeTab[]> {
+export async function getChromeTabList(
+  applicationName: string
+): Promise<ChromeTab[]> {
   const sep = separator();
   const appleScript = `
-    tell application "Google Chrome"
+    tell application "${applicationName}"
       set output to ""
       repeat with aWindow in (every window)
         set windowId to id of aWindow
@@ -52,6 +54,7 @@ export async function getChromeTabList(): Promise<ChromeTab[]> {
   for (const line of lines) {
     const [wId, tId, title, url] = line.split(sep);
     if (!/^https?:\/\//.test(url)) continue;
+
     tabs.push({
       windowId: wId,
       tabId: tId,
@@ -63,6 +66,7 @@ export async function getChromeTabList(): Promise<ChromeTab[]> {
 }
 
 export async function getPageContent(
+  applicationName: string,
   tab?: TabRef | null
 ): Promise<PageContent> {
   const sep = separator();
@@ -75,7 +79,7 @@ export async function getPageContent(
   const appleScript = tab
     ? `
       try
-        tell application "Google Chrome"
+        tell application "${applicationName}"
           tell window id "${tab.windowId}"
             tell tab id "${tab.tabId}"
               (* Chrome によって suspend されたタブで js を実行すると動作が停止する
@@ -93,7 +97,7 @@ export async function getPageContent(
     `
     : `
       try
-        tell application "Google Chrome"
+        tell application "${applicationName}"
           repeat with w in windows
             tell w
               set t to tab (active tab index)
@@ -137,10 +141,13 @@ export async function getPageContent(
   };
 }
 
-export async function openURL(url: string): Promise<void> {
+export async function openURL(
+  applicationName: string,
+  url: string
+): Promise<void> {
   const escapedUrl = escapeAppleScript(url);
   const appleScript = `
-    tell application "Google Chrome"
+    tell application "${applicationName}"
       open location "${escapedUrl}"
     end tell
   `;

@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "mcp-chrome-tabs": "./dist/index.js"
+    "mcp-chrome-tabs": "./dist/cli.js"
   },
   "files": [
     "dist/**/*",
