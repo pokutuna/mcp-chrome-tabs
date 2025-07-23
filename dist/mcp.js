@@ -20,22 +20,31 @@ async function packageVersion() {
     const packageJson = JSON.parse(packageJsonText);
     return packageJson.version;
 }
+function isIgnoredDomain(url, ignoreDomains) {
+    try {
+        const urlObj = new URL(url);
+        return ignoreDomains.some((domain) => urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain));
+    }
+    catch {
+        return false;
+    }
+}
 export async function createMcpServer(options) {
     const server = new McpServer({
         name: "chrome-tabs",
         version: await packageVersion(),
-    });
+    }
+    /* TODO: {
+      capabilities: { resources: {} },
+      debouncedNotificationMethods: ["notifications/resources/list_changed"],
+    }*/
+    );
     server.registerTool("chrome_list_tabs", {
         description: "List all open Chrome tabs",
         inputSchema: {},
     }, async () => {
         const tabs = await chrome.getChromeTabList(options.applicationName);
-        // Filter out ignored domains
-        const filteredTabs = tabs.filter((tab) => {
-            const urlObj = new URL(tab.url);
-            return !options.ignoreDomains.some((domain) => urlObj.hostname === domain ||
-                urlObj.hostname.endsWith("." + domain));
-        });
+        const filteredTabs = tabs.filter((tab) => !isIgnoredDomain(tab.url, options.ignoreDomains));
         const formatter = (t) => `- ${formatTabRef(t)} [${t.title}](${t.url})`;
         const list = filteredTabs.map(formatter).join("\n");
         const header = `### Current Tabs (${filteredTabs.length} tabs exists)\n`;
@@ -59,21 +68,10 @@ export async function createMcpServer(options) {
     }, async (args) => {
         const { tabId } = args;
         const tabRef = tabId ? parseTabRef(tabId) : null;
-        // Check if tab is from ignored domain
-        if (tabRef) {
-            const tabs = await chrome.getChromeTabList(options.applicationName);
-            const targetTab = tabs.find((t) => t.windowId === tabRef.windowId && t.tabId === tabRef.tabId);
-            if (!targetTab) {
-                throw new Error("Tab not found");
-            }
-            const urlObj = new URL(targetTab.url);
-            const isIgnored = options.ignoreDomains.some((domain) => urlObj.hostname === domain ||
-                urlObj.hostname.endsWith("." + domain));
-            if (isIgnored) {
-                throw new Error("Content not available for ignored domain");
-            }
-        }
         const page = await chrome.getPageContent(options.applicationName, tabRef);
+        if (isIgnoredDomain(page.url, options.ignoreDomains)) {
+            throw new Error("Content not available for ignored domain");
+        }
         const content = `---\n${page.title}\n---\n\n${page.content}`;
         return {
             content: [

@@ -16,7 +16,9 @@
     "dev": "node --import tsx src/index.ts",
     "prepublishOnly": "npm run build",
     "start": "node dist/index.js",
-    "inspector": "npx @modelcontextprotocol/inspector"
+    "inspector": "npx @modelcontextprotocol/inspector",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.16.0",
@@ -31,6 +33,7 @@
     "@types/node": "^20.11.17",
     "@types/turndown": "^5.0.5",
     "tsx": "^4.7.1",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
   }
 }

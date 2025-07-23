@@ -10,7 +10,7 @@ USAGE:
   mcp-chrome-tabs [OPTIONS]
 
 OPTIONS:
-  --application-name <name>     Application name to control via AppleScript
+  --application-name <name>    Application name to control via AppleScript
                                (default: "Google Chrome")
                                Example: "Google Chrome Canary"
 
@@ -29,11 +29,13 @@ EXAMPLES:
   # Ignore specific domains
   mcp-chrome-tabs --ignore-domains "github.com,example.com"
 
-  # Combine options
-  mcp-chrome-tabs --application-name "Google Chrome Canary" --ignore-domains "github.com,example.com"
+REQUIREMENTS:
+  Chrome must allow JavaScript from Apple Events:
+  1. Open Chrome
+  2. Go to View > Developer > Allow JavaScript from Apple Events
+  3. Enable the option
 
-MCP CONFIGURATION:
-
+MCP CONFIGURATION EXAMPLE:
   {
     "mcpServers": {
       "chrome-tabs": {

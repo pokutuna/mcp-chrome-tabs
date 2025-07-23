@@ -5,6 +5,11 @@ import { readFile } from "fs/promises";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
+type McpServerOptions = {
+  applicationName: string;
+  ignoreDomains: string[];
+};
+
 function formatTabRef(tab: chrome.ChromeTab): string {
   return `ID:${tab.windowId}:${tab.tabId}`;
 }
@@ -20,25 +25,32 @@ function parseTabRef(tabRef: string): chrome.TabRef | null {
 async function packageVersion(): Promise<string> {
   const packageJsonText = await readFile(
     join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
-    "utf8",
+    "utf8"
   );
   const packageJson = JSON.parse(packageJsonText);
   return packageJson.version;
 }
 
-interface McpServerOptions {
-  applicationName: string;
-  ignoreDomains: string[];
+function isIgnoredDomain(url: string, ignoreDomains: string[]): boolean {
+  try {
+    const urlObj = new URL(url);
+    return ignoreDomains.some(
+      (domain) =>
+        urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
+    );
+  } catch {
+    return false;
+  }
 }
 
 export async function createMcpServer(
-  options: McpServerOptions,
+  options: McpServerOptions
 ): Promise<McpServer> {
   const server = new McpServer(
     {
       name: "chrome-tabs",
       version: await packageVersion(),
-    },
+    }
     /* TODO: {
       capabilities: { resources: {} },
       debouncedNotificationMethods: ["notifications/resources/list_changed"],
@@ -53,16 +65,10 @@ export async function createMcpServer(
     },
     async () => {
       const tabs = await chrome.getChromeTabList(options.applicationName);
+      const filteredTabs = tabs.filter(
+        (tab) => !isIgnoredDomain(tab.url, options.ignoreDomains)
+      );
 
-      // Filter out ignored domains
-      const filteredTabs = tabs.filter((tab) => {
-        const urlObj = new URL(tab.url);
-        return !options.ignoreDomains.some(
-          (domain) =>
-            urlObj.hostname === domain ||
-            urlObj.hostname.endsWith("." + domain),
-        );
-      });
       const formatter = (t: chrome.ChromeTab) =>
         `- ${formatTabRef(t)} [${t.title}](${t.url})`;
       const list = filteredTabs.map(formatter).join("\n");
@@ -75,7 +81,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   server.registerTool(
@@ -88,36 +94,18 @@ export async function createMcpServer(
           .string()
           .optional()
           .describe(
-            "Tab ID in the format `ID:{windowId}:{tabId}`. If omitted, uses the currently active tab.",
+            "Tab ID in the format `ID:{windowId}:{tabId}`. If omitted, uses the currently active tab."
           ),
       },
     },
     async (args) => {
       const { tabId } = args;
       const tabRef = tabId ? parseTabRef(tabId) : null;
-
-      // Check if tab is from ignored domain
-      if (tabRef) {
-        const tabs = await chrome.getChromeTabList(options.applicationName);
-        const targetTab = tabs.find(
-          (t) => t.windowId === tabRef.windowId && t.tabId === tabRef.tabId,
-        );
-        if (!targetTab) {
-          throw new Error("Tab not found");
-        }
-
-        const urlObj = new URL(targetTab.url);
-        const isIgnored = options.ignoreDomains.some(
-          (domain) =>
-            urlObj.hostname === domain ||
-            urlObj.hostname.endsWith("." + domain),
-        );
-        if (isIgnored) {
-          throw new Error("Content not available for ignored domain");
-        }
-      }
-
       const page = await chrome.getPageContent(options.applicationName, tabRef);
+
+      if (isIgnoredDomain(page.url, options.ignoreDomains)) {
+        throw new Error("Content not available for ignored domain");
+      }
       const content = `---\n${page.title}\n---\n\n${page.content}`;
       return {
         content: [
@@ -127,7 +115,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   server.registerTool(
@@ -150,7 +138,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   return server;
