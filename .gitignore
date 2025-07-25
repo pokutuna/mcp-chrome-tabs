@@ -8,9 +8,16 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-# dist
+dist/
 dist-ssr
 *.local
+
+# Test Chrome profile を Git で管理して Apple Events 設定を共有
+# tests/chrome-profile/ をコミットして設定共有
+
+# Playwright reports
+test-results/
+playwright-report/
 
 # Editor directories and files
 .vscode/*

@@ -1,0 +1,8 @@
+# Chrome が実行時に追加するファイルを無視
+# 必要な設定ファイルのみ Git 管理する
+
+*
+!.gitignore
+!Default/
+Default/*
+!Default/Preferences
