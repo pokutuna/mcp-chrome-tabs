@@ -21,7 +21,7 @@ OPTIONS:
                                (default: "Google Chrome")
                                Example: "Google Chrome Canary"
 
-  --ignore-hosts=<hosts>       Comma-separated list of hosts to ignore
+  --exclude-hosts=<hosts>      Comma-separated list of hosts to exclude
                                (default: "")
                                Example: "github.com,example.com,test.com"
 
@@ -47,7 +47,7 @@ MCP CONFIGURATION EXAMPLE:
       }
     }
   }
-`.trimStart()
+`.trimStart(),
   );
 }
 
@@ -59,7 +59,7 @@ function parseCliArgs(args: string[]): CliOptions {
         type: "string",
         default: "Google Chrome",
       },
-      "ignore-hosts": {
+      "exclude-hosts": {
         type: "string",
         default: "",
       },
@@ -77,7 +77,7 @@ function parseCliArgs(args: string[]): CliOptions {
   });
   const parsed: CliOptions = {
     applicationName: values["application-name"],
-    ignoreHosts: values["ignore-hosts"]
+    excludeHosts: values["exclude-hosts"]
       .split(",")
       .map((d) => d.trim())
       .filter(Boolean),
