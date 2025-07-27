@@ -81,7 +81,8 @@ export async function createMcpServer(
   server.registerTool(
     "list_tabs",
     {
-      description: "List all open Chrome tabs",
+      description:
+        "List all open tabs in the user's browser with their titles, URLs, and tab references",
       inputSchema: {},
     },
     async () => {
@@ -101,19 +102,19 @@ export async function createMcpServer(
     "read_tab_content",
     {
       description:
-        "Get readable content from a Chrome tab. If tabId is omitted, uses the currently active tab.",
+        "Get readable content from a tab in the user's browser. Provide ID (from list_tabs output) to read a specific tab, or omit for the active tab.",
       inputSchema: {
-        tabId: z
+        id: z
           .string()
           .optional()
           .describe(
-            "Tab ID in the format `ID:{windowId}:{tabId}`. If omitted, uses the currently active tab."
+            "Tab reference from list_tabs output (e.g: ID:12345:67890). If omitted, uses the currently active tab."
           ),
       },
     },
     async (args) => {
-      const { tabId } = args;
-      const tab = await getTab(tabId ? view.parseTabRef(tabId) : null, options);
+      const { id } = args;
+      const tab = await getTab(id ? view.parseTabRef(id) : null, options);
       return {
         content: [
           {
@@ -128,9 +129,10 @@ export async function createMcpServer(
   server.registerTool(
     "open_in_new_tab",
     {
-      description: "Open a URL in user's browser",
+      description:
+        "Open a URL in a new tab to present content or enable user interaction with webpages",
       inputSchema: {
-        url: z.string().url().describe("URL to open in Chrome"),
+        url: z.string().url().describe("URL to open in the browser"),
       },
     },
     async (args) => {
@@ -151,8 +153,8 @@ export async function createMcpServer(
     "current_tab",
     "tab://current",
     {
-      title: "Current Tab",
-      description: "Content of the currently active Chrome tab",
+      title: "Active Browser Tab",
+      description: "Content of the currently active tab in the user's browser",
       mimeType: "text/markdown",
     },
     async (uri) => {
@@ -187,8 +189,8 @@ export async function createMcpServer(
       },
     }),
     {
-      title: "Chrome Tab Content",
-      description: "Content of a specific Chrome tab",
+      title: "Browser Tabs",
+      description: "Content of a specific tab in the user's browser",
       mimeType: "text/markdown",
     },
     async (uri, { windowId, tabId }) => {
