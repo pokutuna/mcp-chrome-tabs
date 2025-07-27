@@ -10,24 +10,20 @@ USAGE:
   mcp-chrome-tabs [OPTIONS]
 
 OPTIONS:
-  --application-name <name>    Application name to control via AppleScript
+  --application-name=<name>    Application name to control via AppleScript
                                (default: "Google Chrome")
                                Example: "Google Chrome Canary"
 
-  --ignore-domains <domains>   Comma-separated list of domains to ignore
+  --ignore-hosts=<hosts>       Comma-separated list of hosts to ignore
+                               (default: "")
                                Example: "github.com,example.com,test.com"
+
+  --check-interval=<ms>        Interval for checking browser tabs in milliseconds
+                               (default: 3000, set to 0 to disable)
+                               Example: 1000
 
   --help                       Show this help message
 
-EXAMPLES:
-  # Use default Chrome
-  mcp-chrome-tabs
-
-  # Use Chrome Canary
-  mcp-chrome-tabs --application-name "Google Chrome Canary"
-
-  # Ignore specific domains
-  mcp-chrome-tabs --ignore-domains "github.com,example.com"
 
 REQUIREMENTS:
   Chrome must allow JavaScript from Apple Events:
@@ -44,18 +40,23 @@ MCP CONFIGURATION EXAMPLE:
       }
     }
   }
-`);
+`.trimStart());
 }
-function parseCliArgs() {
+function parseCliArgs(args) {
     const { values } = parseArgs({
+        args,
         options: {
             "application-name": {
                 type: "string",
                 default: "Google Chrome",
             },
-            "ignore-domains": {
+            "ignore-hosts": {
                 type: "string",
                 default: "",
+            },
+            "check-interval": {
+                type: "string",
+                default: "3000",
             },
             help: {
                 type: "boolean",
@@ -63,24 +64,24 @@ function parseCliArgs() {
             },
         },
         allowPositionals: false,
+        tokens: true,
     });
-    if (values.help) {
-        showHelp();
-        process.exit(0);
-    }
-    const ignoreDomainsStr = values["ignore-domains"];
-    const ignoreDomains = ignoreDomainsStr
-        ? ignoreDomainsStr
-            .split(",")
-            .map((domain) => domain.trim())
-            .filter(Boolean)
-        : [];
-    return {
+    const parsed = {
         applicationName: values["application-name"],
-        ignoreDomains,
+        ignoreHosts: values["ignore-hosts"]
+            .split(",")
+            .map((d) => d.trim())
+            .filter(Boolean),
+        checkInterval: parseInt(values["check-interval"], 10),
+        help: values.help,
     };
+    return parsed;
 }
-const options = parseCliArgs();
+const options = parseCliArgs(process.argv.slice(2));
+if (options.help) {
+    showHelp();
+    process.exit(0);
+}
 const server = await createMcpServer(options);
 const transport = new StdioServerTransport();
 await server.connect(transport);

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-type McpServerOptions = {
+export type McpServerOptions = {
     applicationName: string;
-    ignoreDomains: string[];
+    ignoreHosts: string[];
+    checkInterval: number;
 };
 export declare function createMcpServer(options: McpServerOptions): Promise<McpServer>;
-export {};
