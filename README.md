@@ -1,6 +1,6 @@
 # @pokutuna/mcp-chrome-tabs
 
-> [!NOTE]
+> [!NOTE]  
 > **macOS only** - This MCP server uses AppleScript and only works on macOS.
 
 Model Context Protocol (MCP) server that provides direct access to your browser's open tabs content. No additional fetching or authentication required - simply access what you're already viewing.
@@ -14,7 +14,7 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 
 ## Installation
 
-> [!IMPORTANT]
+> [!IMPORTANT]  
 > **Requirements**: Enable "Allow JavaScript from Apple Events" in Chrome
 > - (en) **View** > **Developer** > **Allow JavaScript from Apple Events**
 > - (ja) **表示** > **開発 / 管理** > **Apple Events からのJavaScript を許可**
