@@ -9,12 +9,12 @@ const execFileAsync = promisify(execFile);
 
 export type TabRef = { windowId: string; tabId: string };
 
-export type ChromeTab = TabRef & {
+export type Tab = TabRef & {
   title: string;
   url: string;
 };
 
-export type PageContent = {
+export type TabContent = {
   title: string;
   url: string;
   content: string;
@@ -30,7 +30,7 @@ function escapeAppleScript(str: string): string {
 
 export async function getChromeTabList(
   applicationName: string
-): Promise<ChromeTab[]> {
+): Promise<Tab[]> {
   const sep = separator();
   const appleScript = `
     tell application "${applicationName}"
@@ -50,7 +50,7 @@ export async function getChromeTabList(
 
   const result = await executeAppleScript(appleScript);
   const lines = result.trim().split("\n");
-  const tabs: ChromeTab[] = [];
+  const tabs: Tab[] = [];
   for (const line of lines) {
     const [wId, tId, title, url] = line.split(sep);
     if (!/^https?:\/\//.test(url)) continue;
@@ -68,7 +68,7 @@ export async function getChromeTabList(
 export async function getPageContent(
   applicationName: string,
   tab?: TabRef | null
-): Promise<PageContent> {
+): Promise<TabContent> {
   const sep = separator();
   const inner = `
     set tabTitle to title
