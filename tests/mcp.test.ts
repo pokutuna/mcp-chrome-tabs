@@ -69,7 +69,7 @@ describe("MCP Server", () => {
   });
 
   describe("list_tabs tool", () => {
-    it("should return all tabs when no domains are ignored", async () => {
+    it("should return all tabs when no domains are excluded", async () => {
       const { getChromeTabList } = await import("../src/chrome.js");
       vi.mocked(getChromeTabList).mockResolvedValue(mockTabs);
 
@@ -90,8 +90,8 @@ describe("MCP Server", () => {
       expect(text).toContain("ID:1002:2003 [Test Site](https://test.com/page)");
     });
 
-    it("should filter out ignored domains", async () => {
-      // Create server with ignored domains
+    it("should filter out excluded domains", async () => {
+      // Create server with excluded domains
       const options = {
         applicationName: "Google Chrome",
         excludeHosts: ["github.com"],
@@ -166,8 +166,8 @@ describe("MCP Server", () => {
       expect(text).toContain(mockPageContent.content);
     });
 
-    it("should reject content from ignored domains", async () => {
-      // Create server with ignored domains
+    it("should reject content from excluded domains", async () => {
+      // Create server with excluded domains
       const options = {
         applicationName: "Google Chrome",
         excludeHosts: ["example.com"],
@@ -280,7 +280,7 @@ describe("MCP Server", () => {
           filteredClient.readResource({
             uri: "tab://current",
           }),
-        ).rejects.toThrow("Content not available for ignored domain");
+        ).rejects.toThrow("Content not available for excluded host");
       });
     });
 
@@ -331,7 +331,7 @@ describe("MCP Server", () => {
           filteredClient.readResource({
             uri: "tab://1001/2001",
           }),
-        ).rejects.toThrow("Content not available for ignored domain");
+        ).rejects.toThrow("Content not available for excluded host");
       });
     });
 
