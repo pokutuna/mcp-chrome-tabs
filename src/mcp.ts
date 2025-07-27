@@ -34,7 +34,7 @@ async function getTab(
 ): Promise<chrome.TabContent> {
   const content = await chrome.getPageContent(opts.applicationName, tabRef);
   if (isExcludedHost(content.url, opts.excludeHosts)) {
-    throw new Error("Content not available for ignored domain");
+    throw new Error("Content not available for excluded host");
   }
   return content;
 }
