@@ -21,7 +21,7 @@ jobs:
       - run: npm ci
       - run: npm run test:run
       - run: npm run build
-      - run: npm publish --provenance
+      - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - uses: actions/create-release@v1
