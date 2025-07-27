@@ -54,7 +54,8 @@ describe("MCP Server", () => {
     // Create server
     const options = {
       applicationName: "Google Chrome",
-      ignoreDomains: [],
+      excludeHosts: [],
+      checkInterval: 0, // Disable periodic updates in tests
     };
     server = await createMcpServer(options);
 
@@ -67,13 +68,13 @@ describe("MCP Server", () => {
     ]);
   });
 
-  describe("chrome_list_tabs tool", () => {
+  describe("list_tabs tool", () => {
     it("should return all tabs when no domains are ignored", async () => {
       const { getChromeTabList } = await import("../src/chrome.js");
       vi.mocked(getChromeTabList).mockResolvedValue(mockTabs);
 
       const result = await client.callTool({
-        name: "chrome_list_tabs",
+        name: "list_tabs",
         arguments: {},
       });
 
@@ -93,7 +94,8 @@ describe("MCP Server", () => {
       // Create server with ignored domains
       const options = {
         applicationName: "Google Chrome",
-        ignoreDomains: ["github.com"],
+        excludeHosts: ["github.com"],
+        checkInterval: 0, // Disable periodic updates in tests
       };
       const filteredServer = await createMcpServer(options);
 
@@ -114,7 +116,7 @@ describe("MCP Server", () => {
       vi.mocked(getChromeTabList).mockResolvedValue(mockTabs);
 
       const result = await filteredClient.callTool({
-        name: "chrome_list_tabs",
+        name: "list_tabs",
         arguments: {},
       });
 
@@ -126,7 +128,7 @@ describe("MCP Server", () => {
     });
   });
 
-  describe("chrome_read_tab_content tool", () => {
+  describe("read_tab_content tool", () => {
     it("should get page content for valid tab", async () => {
       const { getPageContent, getChromeTabList } = await import(
         "../src/chrome.js"
@@ -135,9 +137,9 @@ describe("MCP Server", () => {
       vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
 
       const result = await client.callTool({
-        name: "chrome_read_tab_content",
+        name: "read_tab_content",
         arguments: {
-          tabId: "ID:1001:2001",
+          id: "ID:1001:2001",
         },
       });
 
@@ -148,12 +150,12 @@ describe("MCP Server", () => {
       expect(text).toContain(mockPageContent.content);
     });
 
-    it("should get content from active tab when no tabId provided", async () => {
+    it("should get content from active tab when no id provided", async () => {
       const { getPageContent } = await import("../src/chrome.js");
       vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
 
       const result = await client.callTool({
-        name: "chrome_read_tab_content",
+        name: "read_tab_content",
         arguments: {},
       });
 
@@ -168,7 +170,8 @@ describe("MCP Server", () => {
       // Create server with ignored domains
       const options = {
         applicationName: "Google Chrome",
-        ignoreDomains: ["example.com"],
+        excludeHosts: ["example.com"],
+        checkInterval: 0, // Disable periodic updates in tests
       };
       const filteredServer = await createMcpServer(options);
 
@@ -192,9 +195,9 @@ describe("MCP Server", () => {
       vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
 
       const result = await filteredClient.callTool({
-        name: "chrome_read_tab_content",
+        name: "read_tab_content",
         arguments: {
-          tabId: "ID:1001:2001",
+          id: "ID:1001:2001",
         },
       });
 
@@ -205,13 +208,13 @@ describe("MCP Server", () => {
     });
   });
 
-  describe("chrome_open_url tool", () => {
+  describe("open_in_new_tab tool", () => {
     it("should open URL with correct application name", async () => {
       const { openURL } = await import("../src/chrome.js");
       vi.mocked(openURL).mockResolvedValue();
 
       const result = await client.callTool({
-        name: "chrome_open_url",
+        name: "open_in_new_tab",
         arguments: {
           url: "https://example.com",
         },
