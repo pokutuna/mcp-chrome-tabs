@@ -203,7 +203,7 @@ describe("MCP Server", () => {
 
       expect(result.isError).toBe(true);
       expect((result.content as any)[0].text).toContain(
-        "Content not available for ignored domain",
+        "Content not available for excluded host",
       );
     });
   });
