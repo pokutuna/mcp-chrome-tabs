@@ -213,17 +213,21 @@ export async function createMcpServer(
   );
 
   if (options.checkInterval > 0) {
-    let lastHash = hashTabList(await listTabs(options));
-    setInterval(async () => {
+    let lastHash: string = hashTabList(await listTabs(options));
+    const check = async () => {
       try {
         const hash = hashTabList(await listTabs(options));
-        if (hash === lastHash) return;
-        server.sendResourceListChanged();
-        lastHash = hash;
+        if (hash !== lastHash) {
+          server.sendResourceListChanged();
+          lastHash = hash;
+        }
       } catch (error) {
         console.error("Error during periodic tab list update:", error);
       }
-    }, options.checkInterval);
+      // Use setTimeout instead of setInterval to avoid overlapping calls
+      setTimeout(check, options.checkInterval);
+    };
+    check();
   }
 
   return server;
