@@ -231,4 +231,208 @@ describe("MCP Server", () => {
       });
     });
   });
+
+  describe("Resources", () => {
+    describe("current_tab resource", () => {
+      it("should return content of active tab", async () => {
+        const { getPageContent } = await import("../src/chrome.js");
+        vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
+
+        const result = await client.readResource({
+          uri: "tab://current",
+        });
+
+        expect(result.contents).toHaveLength(1);
+        const content = result.contents[0];
+        expect(content.uri).toBe("tab://current");
+        expect(content.name).toBe(mockPageContent.title);
+        expect(content.mimeType).toBe("text/markdown");
+        expect(content.text).toContain("---");
+        expect(content.text).toContain("title: " + mockPageContent.title);
+        expect(content.text).toContain(mockPageContent.content);
+      });
+
+      it("should reject content from excluded domains", async () => {
+        // Create server with excluded domains
+        const options = {
+          applicationName: "Google Chrome",
+          excludeHosts: ["example.com"],
+          checkInterval: 0,
+        };
+        const filteredServer = await createMcpServer(options);
+
+        const filteredClient = new Client({
+          name: "test client",
+          version: "0.1.0",
+        });
+
+        const [clientTransport, serverTransport] =
+          InMemoryTransport.createLinkedPair();
+        await Promise.all([
+          filteredClient.connect(clientTransport),
+          filteredServer.connect(serverTransport),
+        ]);
+
+        const { getPageContent } = await import("../src/chrome.js");
+        vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
+
+        await expect(
+          filteredClient.readResource({
+            uri: "tab://current",
+          }),
+        ).rejects.toThrow("Content not available for ignored domain");
+      });
+    });
+
+    describe("tabs resource template", () => {
+      it("should return content of specific tab", async () => {
+        const { getPageContent } = await import("../src/chrome.js");
+        vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
+
+        const result = await client.readResource({
+          uri: "tab://1001/2001",
+        });
+
+        expect(result.contents).toHaveLength(1);
+        const content = result.contents[0];
+        expect(content.uri).toBe("tab://1001/2001");
+        expect(content.name).toBe(mockPageContent.title);
+        expect(content.mimeType).toBe("text/markdown");
+        expect(content.text).toContain("---");
+        expect(content.text).toContain("title: " + mockPageContent.title);
+        expect(content.text).toContain(mockPageContent.content);
+      });
+
+      it("should reject content from excluded domains", async () => {
+        // Create server with excluded domains
+        const options = {
+          applicationName: "Google Chrome",
+          excludeHosts: ["example.com"],
+          checkInterval: 0,
+        };
+        const filteredServer = await createMcpServer(options);
+
+        const filteredClient = new Client({
+          name: "test client",
+          version: "0.1.0",
+        });
+
+        const [clientTransport, serverTransport] =
+          InMemoryTransport.createLinkedPair();
+        await Promise.all([
+          filteredClient.connect(clientTransport),
+          filteredServer.connect(serverTransport),
+        ]);
+
+        const { getPageContent } = await import("../src/chrome.js");
+        vi.mocked(getPageContent).mockResolvedValue(mockPageContent);
+
+        await expect(
+          filteredClient.readResource({
+            uri: "tab://1001/2001",
+          }),
+        ).rejects.toThrow("Content not available for ignored domain");
+      });
+    });
+
+    describe("resource listing", () => {
+      it("should list available resources", async () => {
+        const { getChromeTabList } = await import("../src/chrome.js");
+        vi.mocked(getChromeTabList).mockResolvedValue(mockTabs);
+
+        const result = await client.listResources();
+
+        // Should have current_tab resource plus individual tab resources from template
+        expect(result.resources.length).toBeGreaterThanOrEqual(1);
+
+        // Check current_tab resource
+        const currentTabResource = result.resources.find(
+          (r) => r.uri === "tab://current",
+        );
+        expect(currentTabResource).toBeDefined();
+        expect(currentTabResource?.name).toBe("current_tab");
+        expect(currentTabResource?.mimeType).toBe("text/markdown");
+
+        // Check that tab resources are generated from template (should be mockTabs.length individual tab resources)
+        const tabResources = result.resources.filter(
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current",
+        );
+        expect(tabResources).toHaveLength(mockTabs.length);
+
+        // Verify first tab resource
+        const firstTabResource = tabResources[0];
+        expect(firstTabResource.name).toBe(mockTabs[0].title);
+        expect(firstTabResource.mimeType).toBe("text/markdown");
+      });
+
+      it("should list tab resources from template", async () => {
+        const { getChromeTabList } = await import("../src/chrome.js");
+        vi.mocked(getChromeTabList).mockResolvedValue(mockTabs);
+
+        const result = await client.listResources();
+
+        // Template should generate individual tab resources
+        const tabResources = result.resources.filter(
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current",
+        );
+        expect(tabResources).toHaveLength(mockTabs.length);
+
+        // Verify tab resources match mock data
+        tabResources.forEach((resource, index) => {
+          expect(resource.name).toBe(mockTabs[index].title);
+          expect(resource.mimeType).toBe("text/markdown");
+          expect(resource.uri).toBe(
+            `tab://${mockTabs[index].windowId}/${mockTabs[index].tabId}`,
+          );
+        });
+      });
+
+      it("should filter resources by excluded domains", async () => {
+        // Create server with excluded domains
+        const options = {
+          applicationName: "Google Chrome",
+          excludeHosts: ["github.com"],
+          checkInterval: 0,
+        };
+        const filteredServer = await createMcpServer(options);
+
+        const filteredClient = new Client({
+          name: "test client",
+          version: "0.1.0",
+        });
+
+        const [clientTransport, serverTransport] =
+          InMemoryTransport.createLinkedPair();
+        await Promise.all([
+          filteredClient.connect(clientTransport),
+          filteredServer.connect(serverTransport),
+        ]);
+
+        const { getChromeTabList } = await import("../src/chrome.js");
+        vi.mocked(getChromeTabList).mockResolvedValue(mockTabs);
+
+        const result = await filteredClient.listResources();
+
+        // Should have current_tab resource plus filtered tab resources
+        expect(result.resources.length).toBeGreaterThanOrEqual(1);
+
+        // Verify current_tab resource exists
+        const currentTabResource = result.resources.find(
+          (r) => r.uri === "tab://current",
+        );
+        expect(currentTabResource).toBeDefined();
+
+        // Check filtered tab resources - github.com should be excluded
+        const tabResources = result.resources.filter(
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current",
+        );
+        // Should have 2 tabs (example.com and test.com), github.com is excluded
+        expect(tabResources).toHaveLength(2);
+
+        // Verify github.com tab is not in the list
+        const githubTab = tabResources.find((r) => r.name === "GitHub");
+        expect(githubTab).toBeUndefined();
+      });
+    });
+  });
 });
