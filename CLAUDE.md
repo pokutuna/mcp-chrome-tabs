@@ -9,6 +9,7 @@ This is an MCP (Model Context Protocol) server that provides browser tab access 
 ## Development Commands
 
 ### Building and Running
+
 ```bash
 npm run build          # Compile TypeScript to dist/
 npm run dev            # Run development server with tsx
@@ -16,12 +17,21 @@ npm start              # Run compiled version from dist/
 ```
 
 ### Testing
+
 ```bash
 npm run test           # Run tests with vitest in watch mode
 npm run test:run       # Run tests once and exit
 ```
 
+### Linting
+
+```bash
+npm run lint           # Check code formatting with prettier
+npm run lint:fix       # Fix code formatting issues
+```
+
 ### MCP Testing
+
 ```bash
 npm run inspector      # Launch MCP inspector for testing tools/resources
 ```
@@ -55,6 +65,7 @@ npm run inspector      # Launch MCP inspector for testing tools/resources
 ## Configuration Options
 
 Command-line arguments:
+
 - `--application-name`: Target browser (default: "Google Chrome")
 - `--exclude-hosts`: Comma-separated domains to exclude
 - `--check-interval`: Tab change notification interval in ms (default: 3000)
@@ -69,6 +80,7 @@ Command-line arguments:
 ## Testing Strategy
 
 Tests are located in `tests/` and use Vitest. Focus on:
+
 - MCP tool registration and schema validation
 - Data formatting and URI parsing
 - Error handling for AppleScript failures
@@ -81,5 +93,6 @@ Tests are located in `tests/` and use Vitest. Focus on:
 ## Browser Requirements
 
 **macOS only** - Requires AppleScript support. Must enable "Allow JavaScript from Apple Events" in Chrome:
+
 - English: View > Developer > Allow JavaScript from Apple Events
 - Japanese: 表示 > 開発/管理 > Apple Events からのJavaScript を許可

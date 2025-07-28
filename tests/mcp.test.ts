@@ -94,10 +94,10 @@ describe("MCP Server", () => {
       const text = (result.content as any)[0].text;
       expect(text).toContain("### Current Tabs (3 tabs exists)");
       expect(text).toContain(
-        "ID:1001:2001 [Example Page](https://example.com/page1)",
+        "ID:1001:2001 [Example Page](https://example.com/page1)"
       );
       expect(text).toContain(
-        "ID:1001:2002 [GitHub](https://github.com/user/repo)",
+        "ID:1001:2002 [GitHub](https://github.com/user/repo)"
       );
       expect(text).toContain("ID:1002:2003 [Test Site](https://test.com/page)");
     });
@@ -215,7 +215,7 @@ describe("MCP Server", () => {
 
       expect(result.isError).toBe(true);
       expect((result.content as any)[0].text).toContain(
-        "Content not available for excluded host",
+        "Content not available for excluded host"
       );
     });
   });
@@ -233,7 +233,7 @@ describe("MCP Server", () => {
 
       expect(vi.mocked(mockBrowserInterface.openURL)).toHaveBeenCalledWith(
         "Google Chrome",
-        "https://example.com",
+        "https://example.com"
       );
       expect(result.content).toHaveLength(1);
       expect((result.content as any)[0]).toEqual({
@@ -293,7 +293,7 @@ describe("MCP Server", () => {
         await expect(
           filteredClient.readResource({
             uri: "tab://current",
-          }),
+          })
         ).rejects.toThrow("Content not available for excluded host");
       });
     });
@@ -347,7 +347,7 @@ describe("MCP Server", () => {
         await expect(
           filteredClient.readResource({
             uri: "tab://1001/2001",
-          }),
+          })
         ).rejects.toThrow("Content not available for excluded host");
       });
     });
@@ -363,7 +363,7 @@ describe("MCP Server", () => {
 
         // Check current_tab resource
         const currentTabResource = result.resources.find(
-          (r) => r.uri === "tab://current",
+          (r) => r.uri === "tab://current"
         );
         expect(currentTabResource).toBeDefined();
         expect(currentTabResource?.name).toBe("current_tab");
@@ -371,7 +371,7 @@ describe("MCP Server", () => {
 
         // Check that tab resources are generated from template (should be mockTabs.length individual tab resources)
         const tabResources = result.resources.filter(
-          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current",
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current"
         );
         expect(tabResources).toHaveLength(mockTabs.length);
 
@@ -388,7 +388,7 @@ describe("MCP Server", () => {
 
         // Template should generate individual tab resources
         const tabResources = result.resources.filter(
-          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current",
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current"
         );
         expect(tabResources).toHaveLength(mockTabs.length);
 
@@ -397,7 +397,7 @@ describe("MCP Server", () => {
           expect(resource.name).toBe(mockTabs[index].title);
           expect(resource.mimeType).toBe("text/markdown");
           expect(resource.uri).toBe(
-            `tab://${mockTabs[index].windowId}/${mockTabs[index].tabId}`,
+            `tab://${mockTabs[index].windowId}/${mockTabs[index].tabId}`
           );
         });
       });
@@ -433,13 +433,13 @@ describe("MCP Server", () => {
 
         // Verify current_tab resource exists
         const currentTabResource = result.resources.find(
-          (r) => r.uri === "tab://current",
+          (r) => r.uri === "tab://current"
         );
         expect(currentTabResource).toBeDefined();
 
         // Check filtered tab resources - github.com should be excluded
         const tabResources = result.resources.filter(
-          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current",
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current"
         );
         // Should have 2 tabs (example.com and test.com), github.com is excluded
         expect(tabResources).toHaveLength(2);
