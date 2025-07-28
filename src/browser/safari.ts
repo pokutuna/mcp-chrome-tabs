@@ -1,36 +1,15 @@
-import { execFile } from "child_process";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
-import { promisify } from "util";
 import TurndownService from "turndown";
 import turndownPluginGfm from "turndown-plugin-gfm";
+import { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
+import {
+  escapeAppleScript,
+  executeAppleScript,
+  separator,
+} from "./osascript.js";
 
-const execFileAsync = promisify(execFile);
-
-export type TabRef = { windowId: string; tabId: string };
-
-export type Tab = TabRef & {
-  title: string;
-  url: string;
-};
-
-export type TabContent = {
-  title: string;
-  url: string;
-  content: string;
-};
-
-function escapeAppleScript(str: string): string {
-  return str
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r");
-}
-
-export async function getChromeTabList(
-  applicationName: string
-): Promise<Tab[]> {
+async function getSafariTabList(applicationName: string): Promise<Tab[]> {
   const sep = separator();
   const appleScript = `
     tell application "${applicationName}"
@@ -38,10 +17,10 @@ export async function getChromeTabList(
       repeat with aWindow in (every window)
         set windowId to id of aWindow
         repeat with aTab in (every tab of aWindow)
-          set tabId to id of aTab
-          set tabTitle to title of aTab
+          set tabIndex to index of aTab
+          set tabTitle to name of aTab
           set tabURL to URL of aTab
-          set output to output & windowId & "${sep}" & tabId & "${sep}" & tabTitle & "${sep}" & tabURL & "\\n"
+          set output to output & windowId & "${sep}" & tabIndex & "${sep}" & tabTitle & "${sep}" & tabURL & "\\n"
         end repeat
       end repeat
       return output
@@ -65,15 +44,15 @@ export async function getChromeTabList(
   return tabs;
 }
 
-export async function getPageContent(
+async function getPageContent(
   applicationName: string,
-  tab?: TabRef | null
+  tab?: TabRef | null,
 ): Promise<TabContent> {
   const sep = separator();
   const inner = `
-    set tabTitle to title
+    set tabTitle to name
     set tabURL to URL
-    set tabContent to execute javascript "document.documentElement.outerHTML"
+    set tabContent to do JavaScript "document.documentElement.outerHTML"
     return tabTitle & "${sep}" & tabURL & "${sep}" & tabContent
   `;
   const appleScript = tab
@@ -81,10 +60,7 @@ export async function getPageContent(
       try
         tell application "${applicationName}"
           tell window id "${tab.windowId}"
-            tell tab id "${tab.tabId}"
-              (* Chrome によって suspend されたタブで js を実行すると動作が停止する
-                 タイムアウトにより osascript コマンドの実行を retry したくないので
-                 apple script 内で timeout をしてエラーを返すようにする *)
+            tell tab ${tab.tabId}
               with timeout of 3 seconds
                 ${inner}
               end timeout
@@ -100,7 +76,7 @@ export async function getPageContent(
         tell application "${applicationName}"
           repeat with w in windows
             tell w
-              set t to tab (active tab index)
+              set t to current tab
               if URL of t is not "about:blank" then
                 tell t
                   ${inner}
@@ -141,10 +117,7 @@ export async function getPageContent(
   };
 }
 
-export async function openURL(
-  applicationName: string,
-  url: string
-): Promise<void> {
+async function openURL(applicationName: string, url: string): Promise<void> {
   const escapedUrl = escapeAppleScript(url);
   const appleScript = `
     tell application "${applicationName}"
@@ -154,46 +127,8 @@ export async function openURL(
   await executeAppleScript(appleScript);
 }
 
-async function retry<T>(
-  fn: () => Promise<T>,
-  options?: {
-    maxRetries?: number;
-    retryDelay?: number;
-  }
-): Promise<T> {
-  const { maxRetries = 2, retryDelay = 1000 } = options || {};
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error: unknown) {
-      if (attempt === maxRetries) {
-        console.error("retry failed after maximum attempts:", error);
-        throw error;
-      }
-      await new Promise((resolve) =>
-        setTimeout(resolve, retryDelay * Math.pow(2, attempt))
-      );
-    }
-  }
-  throw new Error("unreachable");
-}
-
-async function executeAppleScript(script: string): Promise<string> {
-  return retry(async () => {
-    const { stdout, stderr } = await execFileAsync(
-      "osascript",
-      ["-e", script],
-      {
-        timeout: 5 * 1000,
-        maxBuffer: 5 * 1024 * 1024, // 5MB
-      }
-    );
-    if (stderr) console.error("AppleScript stderr:", stderr);
-    return stdout.trim();
-  });
-}
-
-function separator(): string {
-  const uniqueId = Math.random().toString(36).substring(2);
-  return `<|SEP:${uniqueId}|>`;
-}
+export const safariBrowser: BrowserInterface = {
+  getTabList: getSafariTabList,
+  getPageContent,
+  openURL,
+};
