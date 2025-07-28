@@ -4,7 +4,9 @@
       "command": "node",
       "args": [
         "--import=tsx",
-        "src/cli.ts"
+        "src/cli.ts",
+        "--application-name=Safari",
+        "--experimental-browser=safari"
       ]
     }
   }

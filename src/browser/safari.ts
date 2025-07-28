@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import turndownPluginGfm from "turndown-plugin-gfm";
-import { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
+import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
 import {
   escapeAppleScript,
   executeAppleScript,

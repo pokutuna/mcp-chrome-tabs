@@ -1,3 +1,5 @@
+export type Browser = "chrome" | "safari";
+
 export type TabRef = { windowId: string; tabId: string };
 
 export type Tab = TabRef & {
@@ -15,7 +17,7 @@ export type BrowserInterface = {
   getTabList(applicationName: string): Promise<Tab[]>;
   getPageContent(
     applicationName: string,
-    tab?: TabRef | null
+    tab?: TabRef | null,
   ): Promise<TabContent>;
   openURL(applicationName: string, url: string): Promise<void>;
 };
@@ -23,7 +25,7 @@ export type BrowserInterface = {
 import { chromeBrowser } from "./chrome.js";
 import { safariBrowser } from "./safari.js";
 
-export function getInterface(browser: "chrome" | "safari"): BrowserInterface {
+export function getInterface(browser: Browser): BrowserInterface {
   if (browser === "safari") {
     return safariBrowser;
   }

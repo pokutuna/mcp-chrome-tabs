@@ -4,6 +4,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
+  Browser,
   BrowserInterface,
   Tab,
   TabRef,
@@ -20,10 +21,10 @@ export type McpServerOptions = {
   applicationName: string;
   excludeHosts: string[];
   checkInterval: number;
-  browser: "chrome" | "safari";
+  browser: Browser;
 };
 
-function getBrowserInterface(browser: "chrome" | "safari"): BrowserInterface {
+function getBrowserInterface(browser: Browser): BrowserInterface {
   return getInterface(browser);
 }
 

@@ -3,6 +3,7 @@
 import { parseArgs } from "util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createMcpServer, McpServerOptions } from "./mcp.js";
+import type { Browser } from "./browser/browser.js";
 
 type CliOptions = McpServerOptions & {
   help: boolean;
@@ -52,7 +53,7 @@ MCP CONFIGURATION EXAMPLE:
       }
     }
   }
-`.trimStart()
+`.trimStart(),
   );
 }
 
@@ -85,11 +86,11 @@ function parseCliArgs(args: string[]): CliOptions {
     tokens: true,
   });
 
-  function parseBrowserOption(browser: string): "chrome" | "safari" {
+  function parseBrowserOption(browser: string): Browser {
     if (browser === "" || browser === "chrome") return "chrome";
     if (browser === "safari") return "safari";
     throw new Error(
-      `Invalid --experimental-browser option: "${browser}". Use "chrome" or "safari".`
+      `Invalid --experimental-browser option: "${browser}". Use "chrome" or "safari".`,
     );
   }
 
