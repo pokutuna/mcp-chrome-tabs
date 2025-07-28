@@ -78,6 +78,7 @@ export async function createMcpServer(
       version: await packageVersion(),
     },
     {
+      instructions: "Use this server to access the user's open browser tabs.",
       capabilities: {
         resources: {
           listChanged: true,
