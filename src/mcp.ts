@@ -5,7 +5,6 @@ import {
 import { z } from "zod";
 import {
   Browser,
-  BrowserInterface,
   Tab,
   TabRef,
   TabContent,
@@ -24,10 +23,6 @@ export type McpServerOptions = {
   browser: Browser;
 };
 
-function getBrowserInterface(browser: Browser): BrowserInterface {
-  return getInterface(browser);
-}
-
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
   const u = new URL(url);
   return excludeHosts.some(
@@ -36,7 +31,7 @@ function isExcludedHost(url: string, excludeHosts: string[]): boolean {
 }
 
 async function listTabs(opts: McpServerOptions): Promise<Tab[]> {
-  const browser = getBrowserInterface(opts.browser);
+  const browser = getInterface(opts.browser);
   const tabs = await browser.getTabList(opts.applicationName);
   return tabs.filter((t) => !isExcludedHost(t.url, opts.excludeHosts));
 }
@@ -45,7 +40,7 @@ async function getTab(
   tabRef: TabRef | null,
   opts: McpServerOptions,
 ): Promise<TabContent> {
-  const browser = getBrowserInterface(opts.browser);
+  const browser = getInterface(opts.browser);
   const content = await browser.getPageContent(opts.applicationName, tabRef);
   if (isExcludedHost(content.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");
@@ -151,7 +146,7 @@ export async function createMcpServer(
     },
     async (args) => {
       const { url } = args;
-      const browser = getBrowserInterface(options.browser);
+      const browser = getInterface(options.browser);
       await browser.openURL(options.applicationName, url);
       return {
         content: [
