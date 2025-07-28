@@ -1,5 +1,7 @@
 # @pokutuna/mcp-chrome-tabs
 
+[![npm version](https://badge.fury.io/js/@pokutuna%2Fmcp-chrome-tabs.svg)](https://badge.fury.io/js/@pokutuna%2Fmcp-chrome-tabs)
+
 Model Context Protocol (MCP) server that provides direct access to your browser's open tabs content. No additional fetching or authentication required - simply access what you're already viewing.
 
 ## Key Features
@@ -31,7 +33,7 @@ Standard config works in most MCP clients (e.g., `.claude.json`, `.mcp.json`):
   "mcpServers": {
     "chrome-tabs": {
       "command": "npx",
-      "args": ["-y", "@pokutuna/mcp-chrome-tabs"]
+      "args": ["-y", "@pokutuna/mcp-chrome-tabs@latest"],
     }
   }
 }
@@ -39,7 +41,7 @@ Standard config works in most MCP clients (e.g., `.claude.json`, `.mcp.json`):
 
 Or for Claude Code:
 ```bash
-claude mcp add -s user chrome-tabs -- npx -y @pokutuna/mcp-chrome-tabs
+claude mcp add -s user chrome-tabs -- npx -y @pokutuna/mcp-chrome-tabs@latest
 ```
 
 ### Command Line Options
@@ -58,16 +60,21 @@ Limited Safari support is available. Note that Safari lacks unique tab IDs, maki
 npx @pokutuna/mcp-chrome-tabs --application-name=Safari --experimental-browser=safari
 ```
 
+## MCP Features
 
-## Tools
+### Tools
 
-### `list_tabs`
+<details>
+<summary><code>list_tabs</code></summary>
 
 List all open tabs in the user's browser with their titles, URLs, and tab references.
 
 - Returns: Markdown formatted list of tabs with tab IDs for reference
 
-### `read_tab_content`
+</details>
+
+<details>
+<summary><code>read_tab_content</code></summary>
 
 Get readable content from a tab in the user's browser.
 
@@ -75,15 +82,21 @@ Get readable content from a tab in the user's browser.
 - If `id` is omitted, uses the currently active tab
 - Returns: Clean, readable content extracted using Mozilla Readability
 
-### `open_in_new_tab`
+</details>
+
+<details>
+<summary><code>open_in_new_tab</code></summary>
 
 Open a URL in a new tab to present content or enable user interaction with webpages.
 
 - `url` (required): URL to open in the browser
 
-## Resources
+</details>
 
-### `tab://current`
+### Resources
+
+<details>
+<summary><code>tab://current</code></summary>
 
 Resource representing the content of the currently active tab.
 
@@ -91,7 +104,10 @@ Resource representing the content of the currently active tab.
 - **MIME type**: `text/markdown`
 - **Content**: Real-time content of the active browser tab
 
-### `tab://{windowId}/{tabId}`
+</details>
+
+<details>
+<summary><code>tab://{windowId}/{tabId}</code></summary>
 
 Resource template for accessing specific tabs.
 
@@ -99,3 +115,5 @@ Resource template for accessing specific tabs.
 - **MIME type**: `text/markdown`
 - **Content**: Content of the specified tab
 - Resources are dynamically generated based on currently open tabs
+
+</details>
