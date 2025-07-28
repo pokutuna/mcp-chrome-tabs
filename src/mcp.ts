@@ -19,7 +19,7 @@ export type McpServerOptions = {
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
   const u = new URL(url);
   return excludeHosts.some(
-    (d) => u.hostname === d || u.hostname.endsWith("." + d),
+    (d) => u.hostname === d || u.hostname.endsWith("." + d)
   );
 }
 
@@ -30,7 +30,7 @@ async function listTabs(opts: McpServerOptions): Promise<chrome.Tab[]> {
 
 async function getTab(
   tabRef: chrome.TabRef | null,
-  opts: McpServerOptions,
+  opts: McpServerOptions
 ): Promise<chrome.TabContent> {
   const content = await chrome.getPageContent(opts.applicationName, tabRef);
   if (isExcludedHost(content.url, opts.excludeHosts)) {
@@ -42,7 +42,7 @@ async function getTab(
 async function packageVersion(): Promise<string> {
   const packageJsonText = await readFile(
     join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
-    "utf8",
+    "utf8"
   );
   const packageJson = JSON.parse(packageJsonText);
   return packageJson.version;
@@ -61,7 +61,7 @@ function hashTabList(tabs: chrome.Tab[]): string {
 }
 
 export async function createMcpServer(
-  options: McpServerOptions,
+  options: McpServerOptions
 ): Promise<McpServer> {
   const server = new McpServer(
     {
@@ -75,7 +75,7 @@ export async function createMcpServer(
         },
       },
       debouncedNotificationMethods: ["notifications/resources/list_changed"],
-    },
+    }
   );
 
   server.registerTool(
@@ -95,7 +95,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   server.registerTool(
@@ -108,7 +108,7 @@ export async function createMcpServer(
           .string()
           .optional()
           .describe(
-            "Tab reference from list_tabs output (e.g: ID:12345:67890). If omitted, uses the currently active tab.",
+            "Tab reference from list_tabs output (e.g: ID:12345:67890). If omitted, uses the currently active tab."
           ),
       },
     },
@@ -123,7 +123,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   server.registerTool(
@@ -146,7 +146,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   server.registerResource(
@@ -171,7 +171,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   server.registerResource(
@@ -211,7 +211,7 @@ export async function createMcpServer(
           },
         ],
       };
-    },
+    }
   );
 
   if (options.checkInterval > 0) {

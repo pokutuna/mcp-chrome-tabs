@@ -1,3 +1,5 @@
-*
-!src/
-!tests/
+# Build artifacts
+dist/
+
+# Dependencies
+node_modules/

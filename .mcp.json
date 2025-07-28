@@ -2,10 +2,7 @@
   "mcpServers": {
     "chrome-tabs": {
       "command": "node",
-      "args": [
-        "--import=tsx",
-        "src/cli.ts"
-      ]
+      "args": ["--import=tsx", "src/cli.ts"]
     }
   }
 }

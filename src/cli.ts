@@ -47,7 +47,7 @@ MCP CONFIGURATION EXAMPLE:
       }
     }
   }
-`.trimStart(),
+`.trimStart()
   );
 }
 
