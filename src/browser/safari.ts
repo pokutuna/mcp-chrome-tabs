@@ -34,6 +34,8 @@ async function getSafariTabList(applicationName: string): Promise<Tab[]> {
     const [wId, tId, title, url] = line.split(sep);
     if (!/^https?:\/\//.test(url)) continue;
 
+    // Note: Safari tab IDs are volatile indices that change when tabs are closed
+    // Unlike Chrome, Safari doesn't provide stable unique tab identifiers
     tabs.push({
       windowId: wId,
       tabId: tId,
@@ -74,17 +76,18 @@ async function getPageContent(
     : `
       try
         tell application "${applicationName}"
-          repeat with w in windows
-            tell w
-              set t to current tab
-              if URL of t is not "about:blank" then
-                tell t
+          tell front window
+            set t to current tab
+            if URL of t is not "about:blank" then
+              tell t
+                with timeout of 3 seconds
                   ${inner}
-                end tell
-              end if
-            end tell
-          end repeat
-          error "No active tab found"
+                end timeout
+              end tell
+            else
+              error "No active tab found"
+            end if
+          end tell
         end tell
       on error errMsg
         return "ERROR" & "${sep}" & errMsg
