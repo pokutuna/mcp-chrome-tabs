@@ -1,20 +1,18 @@
 # @pokutuna/mcp-chrome-tabs
 
-A Model Context Protocol (MCP) server that provides direct access to your Chrome browser's open tabs content. Access what you're already viewing without additional fetching or authentication.
-
-> [!NOTE]  
-> **macOS only** - This MCP server uses AppleScript and only works on macOS.
+Model Context Protocol (MCP) server that provides direct access to your browser's open tabs content. No additional fetching or authentication required - simply access what you're already viewing.
 
 ## Key Features
 
-- **Access browser tabs** - Direct access to content from tabs currently open in your browser
-- **Active tab shortcut** - Quick reference to currently active tab without specifying tab ID
-- **URL opening** - Open AI-provided URLs directly in new browser tabs
-- **Tools & Resources** - Dual interface supporting both MCP tools and resources with automatic refresh notifications when tab collection changes
+- **Direct browser tab access** - No web scraping needed, reads content from already open tabs
+- **Content optimized for AI** - Automatic readability processing and markdown conversion to reduce token usage
+- **Active tab shortcut** - Instant access to currently focused tab without specifying IDs
+- **MCP listChanged notifications** - Follows MCP protocol to notify tab changes (support is limited in most clients)
 
-## Installation
+## Requirements
 
 > [!IMPORTANT]  
+<<<<<<< HEAD
 > **Requirements**: Enable "Allow JavaScript from Apple Events" in Chrome
 >
 > - (en) **View** > **Developer** > **Allow JavaScript from Apple Events**
@@ -23,6 +21,21 @@ A Model Context Protocol (MCP) server that provides direct access to your Chrome
 ### Manual Configuration
 
 Add to your MCP configuration file (e.g., `claude_desktop_config.json`):
+=======
+> **macOS only** - This MCP server uses AppleScript and only works on macOS.
+
+- **Node.js** 20 or newer
+- **MCP Client** such as Claude Desktop, Claude Code, or any MCP-compatible client
+- **macOS** only (uses AppleScript for browser automation)
+
+## Getting Started
+
+First, enable "Allow JavaScript from Apple Events" in Chrome:
+- (en) **View** > **Developer** > **Allow JavaScript from Apple Events**
+- (ja) **表示** > **開発 / 管理** > **Apple Events からのJavaScript を許可**
+
+Standard config works in most MCP clients (e.g., `.claude.json`, `.mcp.json`):
+>>>>>>> origin/main
 
 ```json
 {
@@ -35,8 +48,12 @@ Add to your MCP configuration file (e.g., `claude_desktop_config.json`):
 }
 ```
 
+<<<<<<< HEAD
 ### For Claude Code
 
+=======
+Or for Claude Code:
+>>>>>>> origin/main
 ```bash
 claude mcp add -s user chrome-tabs -- npx -y @pokutuna/mcp-chrome-tabs
 ```
@@ -49,6 +66,18 @@ The server accepts optional command line arguments for configuration:
 - `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
 - `--check-interval` - Interval in milliseconds to check for tab changes and notify clients (default: 3000, set to 0 to disable)
 
+<<<<<<< HEAD
+=======
+#### Experimental Safari Support
+
+Limited Safari support is available. Note that Safari lacks unique tab IDs, making it sensitive to tab order changes during execution:
+
+```bash
+npx @pokutuna/mcp-chrome-tabs --application-name=Safari --experimental-browser=safari
+```
+
+
+>>>>>>> origin/main
 ## Tools
 
 ### `list_tabs`

@@ -2,7 +2,16 @@
   "mcpServers": {
     "chrome-tabs": {
       "command": "node",
+<<<<<<< HEAD
       "args": ["--import=tsx", "src/cli.ts"]
+=======
+      "args": [
+        "--import=tsx",
+        "src/cli.ts",
+        "--application-name=Safari",
+        "--experimental-browser=safari"
+      ]
+>>>>>>> origin/main
     }
   }
 }

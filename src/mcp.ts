@@ -3,7 +3,13 @@ import {
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as chrome from "./chrome.js";
+import {
+  Browser,
+  Tab,
+  TabRef,
+  TabContent,
+  getInterface,
+} from "./browser/browser.js";
 import { readFile } from "fs/promises";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -14,6 +20,7 @@ export type McpServerOptions = {
   applicationName: string;
   excludeHosts: string[];
   checkInterval: number;
+  browser: Browser;
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
@@ -23,16 +30,18 @@ function isExcludedHost(url: string, excludeHosts: string[]): boolean {
   );
 }
 
-async function listTabs(opts: McpServerOptions): Promise<chrome.Tab[]> {
-  const tabs = await chrome.getChromeTabList(opts.applicationName);
+async function listTabs(opts: McpServerOptions): Promise<Tab[]> {
+  const browser = getInterface(opts.browser);
+  const tabs = await browser.getTabList(opts.applicationName);
   return tabs.filter((t) => !isExcludedHost(t.url, opts.excludeHosts));
 }
 
 async function getTab(
-  tabRef: chrome.TabRef | null,
+  tabRef: TabRef | null,
   opts: McpServerOptions
-): Promise<chrome.TabContent> {
-  const content = await chrome.getPageContent(opts.applicationName, tabRef);
+): Promise<TabContent> {
+  const browser = getInterface(opts.browser);
+  const content = await browser.getPageContent(opts.applicationName, tabRef);
   if (isExcludedHost(content.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");
   }
@@ -48,7 +57,7 @@ async function packageVersion(): Promise<string> {
   return packageJson.version;
 }
 
-function hashTabList(tabs: chrome.Tab[]): string {
+function hashTabList(tabs: Tab[]): string {
   const sortedTabs = tabs.slice().sort((a, b) => {
     if (a.windowId !== b.windowId) return a.windowId < b.windowId ? -1 : 1;
     if (a.tabId !== b.tabId) return a.tabId < b.tabId ? -1 : 1;
@@ -137,7 +146,8 @@ export async function createMcpServer(
     },
     async (args) => {
       const { url } = args;
-      await chrome.openURL(options.applicationName, url);
+      const browser = getInterface(options.browser);
+      await browser.openURL(options.applicationName, url);
       return {
         content: [
           {
@@ -194,7 +204,7 @@ export async function createMcpServer(
       mimeType: "text/markdown",
     },
     async (uri, { windowId, tabId }) => {
-      const tabRef: chrome.TabRef = {
+      const tabRef: TabRef = {
         windowId: String(windowId),
         tabId: String(tabId),
       };
