@@ -3,6 +3,7 @@
 import { parseArgs } from "util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createMcpServer, McpServerOptions } from "./mcp.js";
+import type { Browser } from "./browser/browser.js";
 
 type CliOptions = McpServerOptions & {
   help: boolean;
@@ -17,26 +18,31 @@ USAGE:
   mcp-chrome-tabs [OPTIONS]
 
 OPTIONS:
-  --application-name=<name>    Application name to control via AppleScript
-                               (default: "Google Chrome")
-                               Example: "Google Chrome Canary"
+  --application-name=<name>   Application name to control via AppleScript
+                              (default: "Google Chrome")
+                              Example: "Google Chrome Canary"
 
-  --exclude-hosts=<hosts>      Comma-separated list of hosts to exclude
-                               (default: "")
-                               Example: "github.com,example.com,test.com"
+  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
+                              (default: "")
+                              Example: "github.com,example.com,test.com"
 
-  --check-interval=<ms>        Interval for checking browser tabs in milliseconds
-                               (default: 3000, set to 0 to disable)
-                               Example: 1000
+  --check-interval=<ms>       Interval for checking browser tabs in milliseconds
+                              (default: 3000, set to 0 to disable)
+                              Example: 1000
 
-  --help                       Show this help message
+  --experimental-browser=<b>  Browser implementation to use
+                              (default: "chrome")
+                              Options: "chrome", "safari"
+
+  --help                      Show this help message
 
 
 REQUIREMENTS:
-  Chrome must allow JavaScript from Apple Events:
-  1. Open Chrome
-  2. Go to View > Developer > Allow JavaScript from Apple Events
-  3. Enable the option
+  Chrome:
+    Chrome must allow JavaScript from Apple Events:
+    1. Open Chrome
+    2. Go to View > Developer > Allow JavaScript from Apple Events
+    3. Enable the option
 
 MCP CONFIGURATION EXAMPLE:
   {
@@ -67,6 +73,10 @@ function parseCliArgs(args: string[]): CliOptions {
         type: "string",
         default: "3000",
       },
+      "experimental-browser": {
+        type: "string",
+        default: "",
+      },
       help: {
         type: "boolean",
         default: false,
@@ -75,8 +85,18 @@ function parseCliArgs(args: string[]): CliOptions {
     allowPositionals: false,
     tokens: true,
   });
+
+  function parseBrowserOption(browser: string): Browser {
+    if (browser === "" || browser === "chrome") return "chrome";
+    if (browser === "safari") return "safari";
+    throw new Error(
+      `Invalid --experimental-browser option: "${browser}". Use "chrome" or "safari".`,
+    );
+  }
+
   const parsed: CliOptions = {
     applicationName: values["application-name"],
+    browser: parseBrowserOption(values["experimental-browser"]),
     excludeHosts: values["exclude-hosts"]
       .split(",")
       .map((d) => d.trim())

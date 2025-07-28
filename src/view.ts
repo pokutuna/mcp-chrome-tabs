@@ -1,4 +1,4 @@
-import { Tab, TabRef, TabContent } from "./chrome.js";
+import type { Tab, TabRef, TabContent } from "./browser/browser.js";
 
 export function formatTabRef(tab: Tab): string {
   return `ID:${tab.windowId}:${tab.tabId}`;
