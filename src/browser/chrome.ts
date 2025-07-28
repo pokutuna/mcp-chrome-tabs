@@ -46,7 +46,7 @@ async function getChromeTabList(applicationName: string): Promise<Tab[]> {
 
 async function getPageContent(
   applicationName: string,
-  tab?: TabRef | null,
+  tab?: TabRef | null
 ): Promise<TabContent> {
   const sep = separator();
   const inner = `

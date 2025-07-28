@@ -23,6 +23,7 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 ## Getting Started
 
 First, enable "Allow JavaScript from Apple Events" in Chrome:
+
 - (en) **View** > **Developer** > **Allow JavaScript from Apple Events**
 - (ja) **表示** > **開発 / 管理** > **Apple Events からのJavaScript を許可**
 
@@ -33,13 +34,14 @@ Standard config works in most MCP clients (e.g., `.claude.json`, `.mcp.json`):
   "mcpServers": {
     "chrome-tabs": {
       "command": "npx",
-      "args": ["-y", "@pokutuna/mcp-chrome-tabs@latest"],
+      "args": ["-y", "@pokutuna/mcp-chrome-tabs@latest"]
     }
   }
 }
 ```
 
 Or for Claude Code:
+
 ```bash
 claude mcp add -s user chrome-tabs -- npx -y @pokutuna/mcp-chrome-tabs@latest
 ```

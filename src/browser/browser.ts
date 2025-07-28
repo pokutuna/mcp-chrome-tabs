@@ -17,7 +17,7 @@ export type BrowserInterface = {
   getTabList(applicationName: string): Promise<Tab[]>;
   getPageContent(
     applicationName: string,
-    tab?: TabRef | null,
+    tab?: TabRef | null
   ): Promise<TabContent>;
   openURL(applicationName: string, url: string): Promise<void>;
 };

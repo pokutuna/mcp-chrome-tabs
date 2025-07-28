@@ -16,7 +16,7 @@ export async function retry<T>(
   options?: {
     maxRetries?: number;
     retryDelay?: number;
-  },
+  }
 ): Promise<T> {
   const { maxRetries = 2, retryDelay = 1000 } = options || {};
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -28,7 +28,7 @@ export async function retry<T>(
         throw error;
       }
       await new Promise((resolve) =>
-        setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
+        setTimeout(resolve, retryDelay * Math.pow(2, attempt))
       );
     }
   }
@@ -43,7 +43,7 @@ export async function executeAppleScript(script: string): Promise<string> {
       {
         timeout: 5 * 1000,
         maxBuffer: 5 * 1024 * 1024, // 5MB
-      },
+      }
     );
     if (stderr) console.error("AppleScript stderr:", stderr);
     return stdout.trim();

@@ -90,7 +90,7 @@ function parseCliArgs(args: string[]): CliOptions {
     if (browser === "" || browser === "chrome") return "chrome";
     if (browser === "safari") return "safari";
     throw new Error(
-      `Invalid --experimental-browser option: "${browser}". Use "chrome" or "safari".`,
+      `Invalid --experimental-browser option: "${browser}". Use "chrome" or "safari".`
     );
   }
 

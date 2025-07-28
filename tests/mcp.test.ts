@@ -144,7 +144,7 @@ describe("MCP Server", () => {
     it("should get page content for valid tab", async () => {
       vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
       vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-        mockPageContent,
+        mockPageContent
       );
 
       const result = await client.callTool({
@@ -163,7 +163,7 @@ describe("MCP Server", () => {
 
     it("should get content from active tab when no id provided", async () => {
       vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-        mockPageContent,
+        mockPageContent
       );
 
       const result = await client.callTool({
@@ -203,7 +203,7 @@ describe("MCP Server", () => {
 
       vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
       vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-        mockPageContent,
+        mockPageContent
       );
 
       const result = await filteredClient.callTool({
@@ -247,7 +247,7 @@ describe("MCP Server", () => {
     describe("current_tab resource", () => {
       it("should return content of active tab", async () => {
         vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-          mockPageContent,
+          mockPageContent
         );
 
         const result = await client.readResource({
@@ -287,7 +287,7 @@ describe("MCP Server", () => {
         ]);
 
         vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-          mockPageContent,
+          mockPageContent
         );
 
         await expect(
@@ -301,7 +301,7 @@ describe("MCP Server", () => {
     describe("tabs resource template", () => {
       it("should return content of specific tab", async () => {
         vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-          mockPageContent,
+          mockPageContent
         );
 
         const result = await client.readResource({
@@ -341,7 +341,7 @@ describe("MCP Server", () => {
         ]);
 
         vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
-          mockPageContent,
+          mockPageContent
         );
 
         await expect(
