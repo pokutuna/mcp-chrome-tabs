@@ -10,7 +10,6 @@ const test = base.extend<MyFixtures>({
     const context = await playwright[browserName].launchPersistentContext(
       "./tests/integration/chrome-profile",
       {
-        // channel: "chrome",
         headless: false,
         ...devices["Desktop Chrome"],
       }
