@@ -23,8 +23,8 @@
     "lint:fix": "prettier --write .",
     "prepublishOnly": "npm run build",
     "start": "node dist/index.js",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test": "vitest run",
+    "test:watch": "vitest",
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.16.0",
