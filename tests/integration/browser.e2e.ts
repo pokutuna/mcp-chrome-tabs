@@ -1,5 +1,7 @@
 import { test as base, expect, devices } from "@playwright/test";
 import { getInterface, BrowserInterface } from "../../src/browser/browser.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 type MyFixtures = {
   applicationName: string;
@@ -9,8 +11,10 @@ type MyFixtures = {
 // Note: Safari support could be implemented, but Playwright's webkit cannot execute AppleScript
 const test = base.extend<MyFixtures>({
   context: async ({ playwright, browserName }, use) => {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const profilePath = path.resolve(__dirname, "chrome-profile");
     const context = await playwright[browserName].launchPersistentContext(
-      "./tests/integration/chrome-profile", // to keep AppleScript enabled
+      profilePath, // to keep AppleScript enabled
       {
         ...devices["Desktop Chrome"],
         channel: "chrome",
