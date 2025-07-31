@@ -107,11 +107,23 @@ function parseCliArgs(args: string[]): CliOptions {
   return parsed;
 }
 
-const options = parseCliArgs(process.argv.slice(2));
-if (options.help) {
-  showHelp();
-  process.exit(0);
+async function main(): Promise<void> {
+  const options = parseCliArgs(process.argv.slice(2));
+  if (options.help) {
+    showHelp();
+    process.exit(0);
+  }
+  const server = await createMcpServer(options);
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+
+  const shutdown = async () => {
+    await transport.close();
+    await server.close();
+    process.exit(0);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
-const server = await createMcpServer(options);
-const transport = new StdioServerTransport();
-await server.connect(transport);
+
+await main().catch(console.error);
