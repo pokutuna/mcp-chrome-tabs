@@ -10,10 +10,10 @@ type MyFixtures = {
 
 // Note: Safari support could be implemented, but Playwright's webkit cannot execute AppleScript
 const test = base.extend<MyFixtures>({
-  context: async ({ playwright, browserName }, use) => {
+  context: async ({ playwright }, use) => {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const profilePath = path.resolve(__dirname, "chrome-profile");
-    const context = await playwright[browserName].launchPersistentContext(
+    const context = await playwright.chromium.launchPersistentContext(
       profilePath, // to keep AppleScript enabled
       {
         ...devices["Desktop Chrome"],
