@@ -19,7 +19,7 @@ export async function retry<T>(
     retryDelay?: number;
   }
 ): Promise<T> {
-  const { maxRetries = 2, retryDelay = 1000 } = options || {};
+  const { maxRetries = 1, retryDelay = 1000 } = options || {};
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
