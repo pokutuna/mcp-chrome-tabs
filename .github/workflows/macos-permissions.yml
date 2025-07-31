@@ -1,0 +1,73 @@
+name: Grant macOS Permissions
+
+on:
+  push:
+    branches: [e2e-2]
+
+jobs:
+  grant-permissions:
+    name: Grant macOS Permissions
+    runs-on: macos-15 # SIPが無効化されているmacos-13以降のRunnerを指定
+
+    steps:
+      - name: Check SIP Status
+        run: |
+          echo "Verifying System Integrity Protection (SIP) status..."
+          STATUS=$(csrutil status)
+          echo "SIP Status: $STATUS"
+          if]; then
+            echo "::error::SIP is not disabled on this runner. This workflow requires a macos-13 or newer runner."
+            exit 1
+          fi
+          echo "SIP is disabled, proceeding with permission grants."
+
+      - name: Define Application Details
+        id: app_details
+        run: |
+          echo "CHROME_BUNDLE_ID=com.google.Chrome" >> $GITHUB_OUTPUT
+          echo "TERMINAL_BUNDLE_ID=com.apple.Terminal" >> $GITHUB_OUTPUT
+          echo "TCC_DB_PATH=/Library/Application Support/com.apple.TCC/TCC.db" >> $GITHUB_OUTPUT
+
+      - name: Grant Full Disk Access to Terminal
+        run: |
+          echo "Granting Full Disk Access to Terminal to allow TCC.db modification..."
+          TCC_DB="${{ steps.app_details.outputs.TCC_DB_PATH }}"
+          TERMINAL_ID="${{ steps.app_details.outputs.TERMINAL_BUNDLE_ID }}"
+
+          # Terminalのcsreqを生成
+          CSREQ_STR=$(codesign -d -r- /System/Applications/Utilities/Terminal.app 2>/dev/null | tail -n 1)
+          echo "$CSREQ_STR" | csreq -r- -b /tmp/terminal.csreq
+          CSREQ_BLOB=$(xxd -p /tmp/terminal.csreq | tr -d '\n')
+
+          # 権限をTCCデータベースに挿入
+          sudo sqlite3 "$TCC_DB" \
+            "INSERT OR REPLACE INTO access (service, client, client_type, allowed, prompt_count, csreq, auth_version) \
+            VALUES('kTCCServiceSystemPolicyAllFiles', '$TERMINAL_ID', 0, 2, 1, X'$CSREQ_BLOB', 1);"
+          echo "Full Disk Access granted to Terminal."
+
+      - name: Grant AppleEvents Permission to Control Chrome
+        run: |
+          echo "Granting AppleEvents permission for Terminal to control Chrome..."
+          TCC_DB="${{ steps.app_details.outputs.TCC_DB_PATH }}"
+          CHROME_ID="${{ steps.app_details.outputs.CHROME_BUNDLE_ID }}"
+          TERMINAL_ID="${{ steps.app_details.outputs.TERMINAL_BUNDLE_ID }}"
+
+          # Chromeのcsreqを生成
+          CHROME_CSREQ_STR=$(codesign -d -r- "/Applications/Google Chrome.app" 2>/dev/null | tail -n 1)
+          echo "$CHROME_CSREQ_STR" | csreq -r- -b /tmp/chrome.csreq
+          CHROME_CSREQ_BLOB=$(xxd -p /tmp/chrome.csreq | tr -d '\n')
+
+          # Terminalのcsreqを取得（前ステップで生成済み）
+          TERMINAL_CSREQ_BLOB=$(xxd -p /tmp/terminal.csreq | tr -d '\n')
+
+          # AppleEventsの権限を挿入
+          sudo sqlite3 "$TCC_DB" \
+            "INSERT OR REPLACE INTO access (service, client, client_type, allowed, prompt_count, csreq, indirect_object_identifier, indirect_object_code_identity, auth_version) \
+            VALUES('kTCCServiceAppleEvents', '$TERMINAL_ID', 0, 2, 1, X'$TERMINAL_CSREQ_BLOB', '$CHROME_ID', X'$CHROME_CSREQ_BLOB', 1);"
+          echo "AppleEvents permission granted."
+
+      - name: Verify AppleScript Control
+        run: |
+          echo "Verifying AppleScript control over Chrome..."
+          osascript -e 'tell application id "com.google.Chrome" to get version'
+          echo "Verification successful. Chrome responded to AppleScript."
