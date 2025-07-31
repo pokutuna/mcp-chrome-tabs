@@ -1,32 +1,34 @@
 import { test as base, expect, devices } from "@playwright/test";
-import { getInterface } from "../../src/browser/browser.js";
+import { getInterface, BrowserInterface } from "../../src/browser/browser.js";
 
 type MyFixtures = {
   applicationName: string;
+  browserInterface: BrowserInterface;
 };
 
+// Note: Safari support could be implemented, but Playwright's webkit cannot execute AppleScript
 const test = base.extend<MyFixtures>({
   context: async ({ playwright, browserName }, use) => {
     const context = await playwright[browserName].launchPersistentContext(
-      "./tests/integration/chrome-profile",
+      "./tests/integration/chrome-profile", // to keep AppleScript enabled
       {
-        headless: false,
         ...devices["Desktop Chrome"],
+        channel: "chrome",
       }
     );
-
     await use(context);
-
     await context.close();
   },
-  applicationName: async ({ playwright, browserName }, use) => {
-    const path =
-      playwright[browserName].executablePath().split(".app")[0] + ".app";
-    await use(path);
+  browserInterface: async ({}, use) => {
+    const browser = getInterface("chrome");
+    await use(browser);
+  },
+  applicationName: async ({}, use) => {
+    await use("Google Chrome");
   },
 });
 
-test("getTabList", async ({ context, applicationName }) => {
+test("getTabList", async ({ context, applicationName, browserInterface }) => {
   const pages = [
     "http://example.com",
     "https://github.com/pokutuna/mcp-chrome-tabs",
@@ -36,7 +38,6 @@ test("getTabList", async ({ context, applicationName }) => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
   }
 
-  const browserInterface = getInterface("chrome");
   const tabs = await browserInterface.getTabList(applicationName);
 
   expect(tabs.length).toBeGreaterThanOrEqual(2);
@@ -46,11 +47,14 @@ test("getTabList", async ({ context, applicationName }) => {
   ).toBeDefined();
 });
 
-test("getTabContent with reference", async ({ context, applicationName }) => {
+test("getTabContent with reference", async ({
+  context,
+  applicationName,
+  browserInterface,
+}) => {
   const page = await context.newPage();
   await page.goto("http://example.com", { waitUntil: "domcontentloaded" });
 
-  const browserInterface = getInterface("chrome");
   const tabs = await browserInterface.getTabList(applicationName);
   const tab = tabs.find((t) => t.url.includes("example.com"));
   expect(tab).toBeDefined();
@@ -67,19 +71,18 @@ test("getTabContent with reference", async ({ context, applicationName }) => {
 test("getTabContent without reference", async ({
   context,
   applicationName,
+  browserInterface,
 }) => {
   const page = await context.newPage();
   await page.goto("http://example.com", { waitUntil: "domcontentloaded" });
 
-  const browserInterface = getInterface("chrome");
   const content = await browserInterface.getPageContent(applicationName, null);
   expect(content).toHaveProperty("title");
   expect(content).toHaveProperty("url");
   expect(content).toHaveProperty("content");
 });
 
-test("openURL", async ({ applicationName }) => {
-  const browserInterface = getInterface("chrome");
+test("openURL", async ({ applicationName, browserInterface }) => {
   await browserInterface.openURL(
     applicationName,
     "https://github.com/trending"
