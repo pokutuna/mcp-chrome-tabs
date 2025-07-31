@@ -1,0 +1,5 @@
+{
+  "browser": {
+    "allow_javascript_apple_events": true
+  }
+}
