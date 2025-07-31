@@ -42,13 +42,14 @@ test("getTabList", async ({ context, applicationName, browserInterface }) => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
   }
 
-  const tabs = await browserInterface.getTabList(applicationName);
-
-  expect(tabs.length).toBeGreaterThanOrEqual(2);
-  expect(tabs.find((t) => t.url.includes("example.com"))).toBeDefined();
-  expect(
-    tabs.find((t) => t.url.includes("github.com/pokutuna/mcp-chrome-tabs"))
-  ).toBeDefined();
+  await expect(async () => {
+    const tabs = await browserInterface.getTabList(applicationName);
+    expect(tabs.length).toBeGreaterThanOrEqual(2);
+    expect(tabs.find((t) => t.url.includes("example.com"))).toBeDefined();
+    expect(
+      tabs.find((t) => t.url.includes("github.com/pokutuna/mcp-chrome-tabs"))
+    ).toBeDefined();
+  }).toPass();
 });
 
 test("getTabContent with reference", async ({
@@ -62,10 +63,11 @@ test("getTabContent with reference", async ({
   const tabs = await browserInterface.getTabList(applicationName);
   const tab = tabs.find((t) => t.url.includes("example.com"));
   expect(tab).toBeDefined();
+  if (!tab) throw new Error("Tab not found");
 
   const content = await browserInterface.getPageContent(applicationName, {
-    windowId: tab!.windowId,
-    tabId: tab!.tabId,
+    windowId: tab.windowId,
+    tabId: tab.tabId,
   });
   expect(content).toHaveProperty("title");
   expect(content).toHaveProperty("url");
@@ -91,6 +93,9 @@ test("openURL", async ({ applicationName, browserInterface }) => {
     applicationName,
     "https://github.com/trending"
   );
-  const tabs = await browserInterface.getTabList(applicationName);
-  expect(tabs.some((t) => t.url.includes("github.com/trending"))).toBe(true);
+
+  await expect(async () => {
+    const tabs = await browserInterface.getTabList(applicationName);
+    expect(tabs.some((t) => t.url.includes("github.com/trending"))).toBe(true);
+  }).toPass();
 });
