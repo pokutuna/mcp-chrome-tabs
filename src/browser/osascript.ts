@@ -4,6 +4,7 @@ import { promisify } from "util";
 const execFileAsync = promisify(execFile);
 
 export function escapeAppleScript(str: string): string {
+  // https://discussions.apple.com/thread/4247426?sortBy=rank
   return str
     .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"')
