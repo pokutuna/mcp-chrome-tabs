@@ -93,11 +93,14 @@ async function getPageContent(
     `;
 
   const scriptResult = await executeAppleScript(appleScript);
-  if (scriptResult.startsWith(`ERROR${sep}`))
+  if (scriptResult.startsWith(`ERROR${sep}`)) {
     throw new Error(scriptResult.split(sep)[1]);
+  }
 
   const parts = scriptResult.split(sep).map((part) => part.trim());
-  if (parts.length < 3) throw new Error("Failed to read the tab content");
+  if (parts.length < 3) {
+    throw new Error("Failed to read the tab content");
+  }
 
   const [title, url, content] = parts;
 
@@ -107,8 +110,9 @@ async function getPageContent(
       markdown: true,
     })
   );
-  if (!defuddleResult?.content)
+  if (!defuddleResult?.content) {
     throw new Error("Failed to parse the page content");
+  }
 
   const md = defuddleResult.content;
 

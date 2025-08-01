@@ -43,16 +43,12 @@ describe("withMockConsole", () => {
     expect(console.log).toBe(originalLog);
   });
 
-  it("should capture logs even when function throws", async () => {
-    try {
-      await withMockConsole(async () => {
-        console.log("before error", "arg");
-        throw new Error("test error");
-      });
-    } catch (error) {
-      // Test passes if we reach here, meaning the error was propagated
-      expect(error).toBeInstanceOf(Error);
-    }
+  it("should propagate errors from the wrapped function", async () => {
+    const testFunction = async () => {
+      console.log("before error", "arg");
+      throw new Error("test error");
+    };
+    await expect(withMockConsole(testFunction)).rejects.toThrow("test error");
   });
 
   it("should handle functions with no console.log calls", async () => {
