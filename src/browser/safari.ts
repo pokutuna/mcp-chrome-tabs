@@ -1,7 +1,4 @@
-import { JSDOM } from "jsdom";
-import { Readability } from "@mozilla/readability";
-import TurndownService from "turndown";
-import turndownPluginGfm from "turndown-plugin-gfm";
+import { Defuddle } from "defuddle/node";
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
 import {
   escapeAppleScript,
@@ -94,24 +91,22 @@ async function getPageContent(
       end try
     `;
 
-  const result = await executeAppleScript(appleScript);
-  if (result.startsWith(`ERROR${sep}`)) throw new Error(result.split(sep)[1]);
+  const scriptResult = await executeAppleScript(appleScript);
+  if (scriptResult.startsWith(`ERROR${sep}`))
+    throw new Error(scriptResult.split(sep)[1]);
 
-  const parts = result.split(sep).map((part) => part.trim());
+  const parts = scriptResult.split(sep).map((part) => part.trim());
   if (parts.length < 3) throw new Error("Failed to read the tab content");
 
   const [title, url, content] = parts;
 
-  const dom = new JSDOM(content, { url });
-  const reader = new Readability(dom.window.document, {
-    charThreshold: 10,
+  const defuddleResult = await Defuddle(content, url, {
+    markdown: true,
   });
-  const article = reader.parse();
-  if (!article?.content) throw new Error("Failed to parse the page content");
+  if (!defuddleResult?.content)
+    throw new Error("Failed to parse the page content");
 
-  const turndownService = new TurndownService();
-  turndownService.use(turndownPluginGfm.gfm);
-  const md = turndownService.turndown(article.content);
+  const md = defuddleResult.content;
 
   return {
     title,
