@@ -7,7 +7,7 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 ## Key Features
 
 - **Direct browser tab access** - No web scraping needed, reads content from already open tabs
-- **Content optimized for AI** - Automatic readability processing and markdown conversion to reduce token usage
+- **Content optimized for AI** - Automatic content extraction and markdown conversion to reduce token usage
 - **Active tab shortcut** - Instant access to currently focused tab without specifying IDs
 - **MCP listChanged notifications** - Follows MCP protocol to notify tab changes (support is limited in most clients)
 
