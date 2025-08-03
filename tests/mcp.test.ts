@@ -18,7 +18,7 @@ const mockBrowserInterface: BrowserInterface = {
 vi.mock("../src/browser/browser.js", async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...(actual as any),
+    ...(actual as object),
     getInterface: vi.fn(() => mockBrowserInterface),
   };
 });
@@ -412,12 +412,7 @@ describe("MCP Server", () => {
 
         // Verify tab resources match mock data
         tabResources.forEach((resource, index) => {
-          const expectedDomain =
-            index === 0
-              ? "example.com"
-              : index === 1
-                ? "github.com"
-                : "test.com";
+          const expectedDomain = new URL(mockTabs[index].url).hostname;
           expect(resource.name).toBe(
             `${mockTabs[index].title} (${expectedDomain})`
           );
