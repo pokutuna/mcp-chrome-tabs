@@ -53,6 +53,7 @@ The server accepts optional command line arguments for configuration:
 - `--application-name` - Application name to control (default: "Google Chrome")
 - `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
 - `--check-interval` - Interval in milliseconds to check for tab changes and notify clients (default: 3000, set to 0 to disable)
+- `--max-content-chars` - Truncates tab content to a maximum number of characters (default: 20000)
 
 #### Experimental Safari Support
 
