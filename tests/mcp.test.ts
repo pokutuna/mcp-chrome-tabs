@@ -99,6 +99,8 @@ describe("MCP Server", () => {
     });
 
     it("should include full URLs when includeUrl is true", async () => {
+      vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
+
       const result = await client.callTool({
         name: "list_tabs",
         arguments: { includeUrl: true },

@@ -104,7 +104,7 @@ export async function createMcpServer(
       },
     },
     async (args) => {
-      const { includeUrl = false } = args;
+      const { includeUrl } = args;
       const tabs = await listTabs(options);
       return {
         content: [
