@@ -92,16 +92,25 @@ export async function createMcpServer(
     "list_tabs",
     {
       description:
-        "List all open tabs in the user's browser with their titles, URLs, and tab references",
-      inputSchema: {},
+        "List all open tabs in the user's browser with their titles, URLs, and tab references. Use includeUrl option to show full URLs when needed.",
+      inputSchema: {
+        includeUrl: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            "Include full URLs in the output (default: false, shows hostname only)"
+          ),
+      },
     },
-    async () => {
+    async (args) => {
+      const { includeUrl } = args;
       const tabs = await listTabs(options);
       return {
         content: [
           {
             type: "text",
-            text: view.formatList(tabs),
+            text: view.formatList(tabs, includeUrl),
           },
         ],
       };

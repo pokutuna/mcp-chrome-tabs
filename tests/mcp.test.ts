@@ -93,6 +93,22 @@ describe("MCP Server", () => {
       expect(result.content).toHaveLength(1);
       const text = (result.content as any)[0].text;
       expect(text).toContain("### Current Tabs (3 tabs exists)");
+      expect(text).toContain("ID:1001:2001 Example Page (example.com)");
+      expect(text).toContain("ID:1001:2002 GitHub (github.com)");
+      expect(text).toContain("ID:1002:2003 Test Site (test.com)");
+    });
+
+    it("should include full URLs when includeUrl is true", async () => {
+      vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
+
+      const result = await client.callTool({
+        name: "list_tabs",
+        arguments: { includeUrl: true },
+      });
+
+      expect(result.content).toHaveLength(1);
+      const text = (result.content as any)[0].text;
+      expect(text).toContain("### Current Tabs (3 tabs exists)");
       expect(text).toContain(
         "ID:1001:2001 [Example Page](https://example.com/page1)"
       );
