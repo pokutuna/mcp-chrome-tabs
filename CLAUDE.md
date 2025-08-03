@@ -2,97 +2,75 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
-
-This is an MCP (Model Context Protocol) server that provides browser tab access through AppleScript on macOS. The server enables AI assistants to read content from Chrome/Safari tabs, list open tabs, and open new URLs in the browser.
-
 ## Development Commands
 
-### Building and Running
+### Building and Testing
 
-```bash
-npm run build          # Compile TypeScript to dist/
-npm run dev            # Run development server with tsx
-npm start              # Run compiled version from dist/
-```
+- `npm run build` - Compile TypeScript to JavaScript in `dist/` directory
+- `npm run test` - Run unit tests with Vitest
+- `npm test` - Alias for `npm run test`
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:e2e` - Run end-to-end tests with Playwright
 
-### Testing
+### Development
 
-```bash
-npm run test           # Run tests with vitest in watch mode
-npm run test:run       # Run tests once and exit
-```
+- `npm run dev` - Run the CLI directly from source using tsx
+- `npm run start` - Run the compiled version from dist/
+- `npm run inspector` - Open MCP inspector for debugging
 
-### Linting
+### Code Quality
 
-```bash
-npm run lint           # Check code formatting with prettier
-npm run lint:fix       # Fix code formatting issues
-```
-
-### MCP Testing
-
-```bash
-npm run inspector      # Launch MCP inspector for testing tools/resources
-```
+- `npm run lint` - Check code formatting with Prettier
+- `npm run lint:fix` - Fix code formatting issues
 
 ## Architecture
 
+This is an MCP (Model Context Protocol) server that provides access to browser tabs on macOS using AppleScript automation.
+
 ### Core Components
 
-- **src/mcp.ts**: Main MCP server implementation with tools and resources registration
-- **src/chrome.ts**: AppleScript integration for browser automation (tab listing, content extraction, URL opening)
-- **src/view.ts**: Data formatting and presentation layer (markdown conversion, URI templates)
-- **src/cli.ts**: Command-line interface and server startup
-- **src/types.d.ts**: TypeScript declarations for external modules
+- **src/mcp.ts** - Main MCP server implementation with tools and resources
+- **src/browser/** - Browser-specific implementations
+  - **browser.ts** - Common browser interface and types
+  - **chrome.ts** - Chrome-specific AppleScript automation
+  - **safari.ts** - Safari-specific implementation (experimental)
+  - **osascript.ts** - AppleScript execution utilities
+- **src/view.ts** - Content formatting and display utilities
+- **src/util.ts** - General utility functions
+- **src/cli.ts** - Command-line interface entry point
 
-### Key Design Patterns
+### Key Features
 
-1. **AppleScript Integration**: Uses `osascript` via Node.js `execFile` to communicate with Chrome/Safari
-2. **Content Processing Pipeline**: HTML → Readability (Mozilla) → Turndown (HTML to Markdown)
-3. **Resource Templates**: Dynamic MCP resources for individual tabs using `tab://{windowId}/{tabId}` URI scheme
-4. **Error Handling**: Retry mechanisms with exponential backoff for AppleScript execution
-5. **Host Filtering**: Configurable domain exclusion for privacy/security
+The server provides three MCP tools:
 
-### Dependencies
+1. `list_tabs` - List all browser tabs with IDs and metadata
+2. `read_tab_content` - Extract readable content from tabs using Mozilla Readability
+3. `open_in_new_tab` - Open new URLs in browser
 
-- **@modelcontextprotocol/sdk**: MCP server framework
-- **@mozilla/readability**: Content extraction from HTML
-- **jsdom**: DOM parsing for Readability
-- **turndown**: HTML to Markdown conversion
-- **zod**: Schema validation for tool inputs
+Resources:
 
-## Configuration Options
+- `tab://current` - Active tab content
+- `tab://{windowId}/{tabId}` - Specific tab content
 
-Command-line arguments:
+### macOS Requirements
 
-- `--application-name`: Target browser (default: "Google Chrome")
-- `--exclude-hosts`: Comma-separated domains to exclude
-- `--check-interval`: Tab change notification interval in ms (default: 3000)
+This project is macOS-only and requires:
 
-## Security Considerations
+- "Allow JavaScript from Apple Events" enabled in Chrome
+- AppleScript permissions for browser automation
+- Node.js 20 or newer
 
-- Uses AppleScript which requires "Allow JavaScript from Apple Events" permission in Chrome
-- Implements host exclusion to prevent access to sensitive domains
-- Content is processed through Mozilla Readability for safety
-- No direct file system access or shell command execution
+### Testing Structure
 
-## Testing Strategy
+- **tests/unit/** - Unit tests for individual modules
+- **tests/integration/** - E2E tests using Playwright
+- Custom Chrome profile in `tests/integration/chrome-profile/` for isolated testing
 
-Tests are located in `tests/` and use Vitest. Focus on:
+### Configuration Options
 
-- MCP tool registration and schema validation
-- Data formatting and URI parsing
-- Error handling for AppleScript failures
+Command-line options:
 
-## Coding Standards
-
-- **Language**: Write all comments and commit messages in English
-- **Comments**: Follow the established pattern of inline documentation for complex AppleScript logic
-
-## Browser Requirements
-
-**macOS only** - Requires AppleScript support. Must enable "Allow JavaScript from Apple Events" in Chrome:
-
-- English: View > Developer > Allow JavaScript from Apple Events
-- Japanese: 表示 > 開発/管理 > Apple Events からのJavaScript を許可
+- `--application-name` - Target browser application (default: "Google Chrome")
+- `--exclude-hosts` - Comma-separated domains to exclude from access
+- `--check-interval` - Tab change notification interval in ms (default: 3000)
+- `--experimental-browser=safari` - Enable Safari support (limited functionality)
