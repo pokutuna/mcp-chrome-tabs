@@ -39,14 +39,37 @@ export function formatListItem(tab: Tab, includeUrl: boolean = false): string {
   }
 }
 
-export function formatTabContent(tab: TabContent): string {
-  return `
----
-url: ${tab.url}
-title: ${tab.title}
----
-${tab.content}
-`.trimStart();
+type FrontMatter = { key: string; value: string | number | boolean };
+
+export function formatTabContent(
+  tab: TabContent,
+  startIndex: number = 0,
+  maxContentChars?: number
+): string {
+  const frontMatters: FrontMatter[] = [
+    { key: "url", value: tab.url },
+    { key: "title", value: tab.title },
+  ];
+  let content = tab.content;
+
+  if (startIndex > 0) {
+    content = content.slice(startIndex);
+    frontMatters.push({ key: "startIndex", value: startIndex });
+  }
+  const truncation =
+    maxContentChars !== undefined && content.length > maxContentChars;
+  if (truncation) {
+    content = content.slice(0, maxContentChars);
+    const nextStart = startIndex + maxContentChars;
+    content += `\n\n<ERROR>Content truncated. Read with startIndex of ${nextStart} to get more content.</ERROR>`;
+    frontMatters.push({ key: "truncated", value: truncation });
+  }
+
+  const frontMatterText = frontMatters
+    .map(({ key, value }) => `${key}: ${value}`)
+    .join("\n");
+
+  return ["---", frontMatterText, "---", content].join("\n");
 }
 
 export const uriTemplate = "tab://{windowId}/{tabId}";
