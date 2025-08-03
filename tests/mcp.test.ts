@@ -18,7 +18,7 @@ const mockBrowserInterface: BrowserInterface = {
 vi.mock("../src/browser/browser.js", async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as any),
     getInterface: vi.fn(() => mockBrowserInterface),
   };
 });
@@ -273,7 +273,7 @@ describe("MCP Server", () => {
         expect(result.contents).toHaveLength(1);
         const content = result.contents[0];
         expect(content.uri).toBe("tab://current");
-        expect(content.name).toBe(mockPageContent.title);
+        expect(content.name).toBe(`${mockPageContent.title} (example.com)`);
         expect(content.mimeType).toBe("text/markdown");
         expect(content.text).toContain("---");
         expect(content.text).toContain("title: " + mockPageContent.title);
@@ -327,7 +327,7 @@ describe("MCP Server", () => {
         expect(result.contents).toHaveLength(1);
         const content = result.contents[0];
         expect(content.uri).toBe("tab://1001/2001");
-        expect(content.name).toBe(mockPageContent.title);
+        expect(content.name).toBe(`${mockPageContent.title} (example.com)`);
         expect(content.mimeType).toBe("text/markdown");
         expect(content.text).toContain("---");
         expect(content.text).toContain("title: " + mockPageContent.title);
@@ -393,7 +393,9 @@ describe("MCP Server", () => {
 
         // Verify first tab resource
         const firstTabResource = tabResources[0];
-        expect(firstTabResource.name).toBe(mockTabs[0].title);
+        expect(firstTabResource.name).toBe(
+          `${mockTabs[0].title} (example.com)`
+        );
         expect(firstTabResource.mimeType).toBe("text/markdown");
       });
 
@@ -410,7 +412,15 @@ describe("MCP Server", () => {
 
         // Verify tab resources match mock data
         tabResources.forEach((resource, index) => {
-          expect(resource.name).toBe(mockTabs[index].title);
+          const expectedDomain =
+            index === 0
+              ? "example.com"
+              : index === 1
+                ? "github.com"
+                : "test.com";
+          expect(resource.name).toBe(
+            `${mockTabs[index].title} (${expectedDomain})`
+          );
           expect(resource.mimeType).toBe("text/markdown");
           expect(resource.uri).toBe(
             `tab://${mockTabs[index].windowId}/${mockTabs[index].tabId}`

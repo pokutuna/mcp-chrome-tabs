@@ -21,6 +21,10 @@ function getDomain(url: string): string {
   }
 }
 
+export function formatTabName(tab: { title: string; url: string }): string {
+  return `${tab.title} (${getDomain(tab.url)})`;
+}
+
 export function formatList(tabs: Tab[], includeUrl: boolean = false): string {
   const list = tabs.map((tab) => formatListItem(tab, includeUrl)).join("\n");
   const header = `### Current Tabs (${tabs.length} tabs exists)\n`;
@@ -31,15 +35,15 @@ export function formatListItem(tab: Tab, includeUrl: boolean = false): string {
   if (includeUrl) {
     return `- ${formatTabRef(tab)} [${tab.title}](${tab.url})`;
   } else {
-    return `- ${formatTabRef(tab)} ${tab.title} (${getDomain(tab.url)})`;
+    return `- ${formatTabRef(tab)} ${formatTabName(tab)}`;
   }
 }
 
 export function formatTabContent(tab: TabContent): string {
   return `
 ---
-title: ${tab.title}
 url: ${tab.url}
+title: ${tab.title}
 ---
 ${tab.content}
 `.trimStart();

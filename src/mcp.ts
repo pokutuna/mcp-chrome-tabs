@@ -184,7 +184,7 @@ export async function createMcpServer(
         contents: [
           {
             uri: uri.href,
-            name: tab.title,
+            name: view.formatTabName(tab),
             text,
             mimeType: "text/markdown",
             size: new Blob([text]).size,
@@ -202,7 +202,7 @@ export async function createMcpServer(
         return {
           resources: tabs.map((tab) => ({
             uri: view.formatUri(tab),
-            name: tab.title,
+            name: view.formatTabName(tab),
             mimeType: "text/markdown",
           })),
         };
@@ -224,7 +224,7 @@ export async function createMcpServer(
         contents: [
           {
             uri: uri.href,
-            name: tab.title,
+            name: view.formatTabName(tab),
             mimeType: "text/markdown",
             text,
             size: new Blob([text]).size,
