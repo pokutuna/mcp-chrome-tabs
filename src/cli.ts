@@ -34,6 +34,9 @@ OPTIONS:
                               (default: "chrome")
                               Options: "chrome", "safari"
 
+  --max-content-chars=<chars> Maximum content characters per single read
+                              (default: 20000)
+
   --help                      Show this help message
 
 
@@ -77,6 +80,10 @@ function parseCliArgs(args: string[]): CliOptions {
         type: "string",
         default: "",
       },
+      "max-content-chars": {
+        type: "string",
+        default: "20000",
+      },
       help: {
         type: "boolean",
         default: false,
@@ -102,6 +109,7 @@ function parseCliArgs(args: string[]): CliOptions {
       .map((d) => d.trim())
       .filter(Boolean),
     checkInterval: parseInt(values["check-interval"], 10),
+    maxContentChars: parseInt(values["max-content-chars"], 10),
     help: values.help,
   };
   return parsed;

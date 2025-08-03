@@ -23,6 +23,7 @@ export type McpServerOptions = {
   excludeHosts: string[];
   checkInterval: number;
   browser: Browser;
+  maxContentChars: number;
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
@@ -143,16 +144,27 @@ export async function createMcpServer(
           .describe(
             "Tab reference from list_tabs output (e.g: ID:12345:67890). If omitted, uses the currently active tab."
           ),
+        startIndex: z
+          .number()
+          .optional()
+          .default(0)
+          .describe(
+            "Starting character position for content extraction (default: 0)"
+          ),
       },
     },
     async (args) => {
-      const { id } = args;
+      const { id, startIndex } = args;
       const tab = await getTab(id ? view.parseTabRef(id) : null, options);
       return {
         content: [
           {
             type: "text",
-            text: view.formatTabContent(tab),
+            text: view.formatTabContent(
+              tab,
+              startIndex,
+              options.maxContentChars
+            ),
           },
         ],
       };
@@ -193,7 +205,8 @@ export async function createMcpServer(
     },
     async (uri) => {
       const tab = await getTab(null, options);
-      const text = view.formatTabContent(tab);
+      // TODO: Add pagination support for resources (startIndex parameter)
+      const text = view.formatTabContent(tab, 0, undefined);
       return {
         contents: [
           {
@@ -233,7 +246,8 @@ export async function createMcpServer(
         tabId: String(tabId),
       };
       const tab = await getTab(tabRef, options);
-      const text = view.formatTabContent(tab);
+      // TODO: Add pagination support for resources (startIndex parameter)
+      const text = view.formatTabContent(tab, 0, undefined);
       return {
         contents: [
           {
