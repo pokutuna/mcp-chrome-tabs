@@ -101,6 +101,16 @@ function parseCliArgs(args: string[]): CliOptions {
     );
   }
 
+  function parseIntWithDefault(
+    value: string,
+    defaultValue: number,
+    minValue: number = 0
+  ): number {
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed) || parsed < minValue) return defaultValue;
+    return parsed;
+  }
+
   const parsed: CliOptions = {
     applicationName: values["application-name"],
     browser: parseBrowserOption(values["experimental-browser"]),
@@ -108,8 +118,8 @@ function parseCliArgs(args: string[]): CliOptions {
       .split(",")
       .map((d) => d.trim())
       .filter(Boolean),
-    checkInterval: parseInt(values["check-interval"], 10),
-    maxContentChars: parseInt(values["max-content-chars"], 10),
+    checkInterval: parseIntWithDefault(values["check-interval"], 3000, 0),
+    maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
     help: values.help,
   };
   return parsed;
