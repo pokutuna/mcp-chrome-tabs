@@ -39,6 +39,7 @@ export function formatTabContent(tab: TabContent): string {
   return `
 ---
 title: ${tab.title}
+url: ${tab.url}
 ---
 ${tab.content}
 `.trimStart();
@@ -47,6 +48,5 @@ ${tab.content}
 export const uriTemplate = "tab://{windowId}/{tabId}";
 
 export function formatUri(ref: TabRef): string {
-  // TODO give domain & title for incremental search
   return `tab://${ref.windowId}/${ref.tabId}`;
 }
