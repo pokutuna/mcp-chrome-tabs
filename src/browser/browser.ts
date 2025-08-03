@@ -10,7 +10,7 @@ export type Tab = TabRef & {
 export type TabContent = {
   title: string;
   url: string;
-  content: string;
+  content: string; // Raw HTML content
 };
 
 export type BrowserInterface = {
