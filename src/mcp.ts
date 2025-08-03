@@ -146,6 +146,8 @@ export async function createMcpServer(
           ),
         startIndex: z
           .number()
+          .int()
+          .nonnegative()
           .optional()
           .default(0)
           .describe(

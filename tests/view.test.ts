@@ -134,9 +134,7 @@ describe("formatTabContent", () => {
         const result = formatTabContent(longTab, currentIndex, pageSize);
 
         // Extract content portion (after front matter)
-        const frontMatterEnd =
-          result.indexOf("---\n", result.indexOf("---\n") + 1) + 4;
-        const contentPart = result.slice(frontMatterEnd);
+        const contentPart = result.split("\n---\n")[1];
 
         const isTruncated = result.includes("truncated: true");
 
