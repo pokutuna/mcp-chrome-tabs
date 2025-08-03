@@ -98,7 +98,9 @@ export async function createMcpServer(
           .boolean()
           .optional()
           .default(false)
-          .describe("Include full URLs in the output"),
+          .describe(
+            "Include full URLs in the output (default: false, shows hostname only)"
+          ),
       },
     },
     async (args) => {
