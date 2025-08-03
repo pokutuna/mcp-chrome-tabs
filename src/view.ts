@@ -12,20 +12,26 @@ export function parseTabRef(tabRef: string): TabRef | null {
   return { windowId, tabId };
 }
 
-function truncateUrl(tab: Tab, over: number = 120): string {
-  const url = tab.url;
-  if (url.length <= over) return url;
-  return url.slice(0, over) + "...";
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }
 
-export function formatList(tabs: Tab[]): string {
-  const list = tabs.map(formatListItem).join("\n");
+export function formatList(tabs: Tab[], includeUrl: boolean = false): string {
+  const list = tabs.map((tab) => formatListItem(tab, includeUrl)).join("\n");
   const header = `### Current Tabs (${tabs.length} tabs exists)\n`;
   return header + list;
 }
 
-export function formatListItem(tab: Tab): string {
-  return `- ${formatTabRef(tab)} [${tab.title}](${truncateUrl(tab)})`;
+export function formatListItem(tab: Tab, includeUrl: boolean = false): string {
+  if (includeUrl) {
+    return `- ${formatTabRef(tab)} [${tab.title}](${tab.url})`;
+  } else {
+    return `- ${formatTabRef(tab)} ${tab.title} (${getDomain(tab.url)})`;
+  }
 }
 
 export function formatTabContent(tab: TabContent): string {
