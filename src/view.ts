@@ -14,7 +14,8 @@ export function parseTabRef(tabRef: string): TabRef | null {
 
 function getDomain(url: string): string {
   try {
-    return new URL(url).hostname;
+    const u = new URL(url);
+    return u.port ? `${u.hostname}:${u.port}` : u.hostname;
   } catch {
     return url;
   }
