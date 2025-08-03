@@ -107,14 +107,14 @@ export async function createMcpServer(
     "list_tabs",
     {
       description:
-        "List all open tabs in the user's browser with their titles, URLs, and tab references. Use includeUrl option to show full URLs when needed.",
+        "List all open tabs in the user's browser with their titles and tab references.",
       inputSchema: {
         includeUrl: z
           .boolean()
           .optional()
           .default(false)
           .describe(
-            "Include full URLs in the output (default: false, shows hostname only)"
+            "Include URLs in the output. Enable only when you need to reference specific URLs. (default: false, hostnames always included)"
           ),
       },
     },
