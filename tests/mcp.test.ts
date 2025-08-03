@@ -47,8 +47,17 @@ const mockTabs: Tab[] = [
 const mockPageContent: TabContent = {
   title: "Example Page",
   url: "https://example.com/page1",
-  content: "# Example\n\nThis is test content.",
-};
+  content: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Example Page</title>
+</head>
+<body>
+  <h1>Example</h1>
+  <p>This is test content.</p>
+</body>
+</html>`,
+};;
 
 describe("MCP Server", () => {
   let client: Client;
@@ -174,7 +183,8 @@ describe("MCP Server", () => {
       const text = (result.content as any)[0].text;
       expect(text).toContain("---");
       expect(text).toContain(mockPageContent.title);
-      expect(text).toContain(mockPageContent.content);
+      expect(text).toContain("## Example");
+      expect(text).toContain("This is test content.");
     });
 
     it("should get content from active tab when no id provided", async () => {
@@ -191,7 +201,8 @@ describe("MCP Server", () => {
       const text = (result.content as any)[0].text;
       expect(text).toContain("---");
       expect(text).toContain(mockPageContent.title);
-      expect(text).toContain(mockPageContent.content);
+      expect(text).toContain("## Example");
+      expect(text).toContain("This is test content.");
     });
 
     it("should reject content from excluded domains", async () => {
@@ -277,7 +288,8 @@ describe("MCP Server", () => {
         expect(content.mimeType).toBe("text/markdown");
         expect(content.text).toContain("---");
         expect(content.text).toContain("title: " + mockPageContent.title);
-        expect(content.text).toContain(mockPageContent.content);
+        expect(content.text).toContain("## Example");
+        expect(content.text).toContain("This is test content.");
       });
 
       it("should reject content from excluded domains", async () => {
@@ -331,7 +343,8 @@ describe("MCP Server", () => {
         expect(content.mimeType).toBe("text/markdown");
         expect(content.text).toContain("---");
         expect(content.text).toContain("title: " + mockPageContent.title);
-        expect(content.text).toContain(mockPageContent.content);
+        expect(content.text).toContain("## Example");
+        expect(content.text).toContain("This is test content.");
       });
 
       it("should reject content from excluded domains", async () => {

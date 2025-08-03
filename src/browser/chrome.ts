@@ -1,5 +1,5 @@
-import { Defuddle } from "defuddle/node";
-import { withMockConsole } from "../util.js";
+
+
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
 import {
   escapeAppleScript,
@@ -104,22 +104,12 @@ async function getPageContent(
 
   const [title, url, content] = parts;
 
-  // Suppress defuddle's console.log output during parsing
-  const { result: defuddleResult } = await withMockConsole(() =>
-    Defuddle(content, url, {
-      markdown: true,
-    })
-  );
-  if (!defuddleResult?.content) {
-    throw new Error("Failed to parse the page content");
-  }
 
-  const md = defuddleResult.content;
 
   return {
     title,
     url,
-    content: md,
+    content, // Return raw HTML content
   };
 }
 
