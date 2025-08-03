@@ -1,5 +1,3 @@
-
-
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
 import {
   escapeAppleScript,
@@ -103,8 +101,6 @@ async function getPageContent(
   }
 
   const [title, url, content] = parts;
-
-
 
   return {
     title,

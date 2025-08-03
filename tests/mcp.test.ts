@@ -57,7 +57,7 @@ const mockPageContent: TabContent = {
   <p>This is test content.</p>
 </body>
 </html>`,
-};;
+};
 
 describe("MCP Server", () => {
   let client: Client;
