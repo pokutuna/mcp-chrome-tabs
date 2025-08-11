@@ -34,12 +34,12 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.1",
+    "@playwright/test": "^1.54.2",
     "@types/node": "^20.11.17",
     "playwright": "^1.54.1",
     "prettier": "^3.6.2",
     "tsx": "^4.7.1",
-    "typescript": "~5.8.3",
+    "typescript": "~5.9.2",
     "vitest": "^3.2.4"
   }
 }
