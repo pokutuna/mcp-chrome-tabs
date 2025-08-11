@@ -1,4 +1,4 @@
-export type Browser = "chrome" | "safari";
+export type Browser = "chrome" | "safari" | "arc";
 
 export type TabRef = { windowId: string; tabId: string };
 
@@ -24,10 +24,14 @@ export type BrowserInterface = {
 
 import { chromeBrowser } from "./chrome.js";
 import { safariBrowser } from "./safari.js";
+import { arcBrowser } from "./arc.js";
 
 export function getInterface(browser: Browser): BrowserInterface {
   if (browser === "safari") {
     return safariBrowser;
+  }
+  if (browser === "arc") {
+    return arcBrowser;
   }
   return chromeBrowser;
 }

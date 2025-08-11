@@ -63,6 +63,14 @@ Limited Safari support is available. Note that Safari lacks unique tab IDs, maki
 npx @pokutuna/mcp-chrome-tabs --application-name=Safari --experimental-browser=safari
 ```
 
+#### Experimental Arc Browser Support
+
+Arc Browser support is available. Arc is Chrome-based and supports JavaScript execution from Apple Events:
+
+```bash
+npx @pokutuna/mcp-chrome-tabs --application-name=Arc --experimental-browser=arc
+```
+
 ## MCP Features
 
 ### Tools
