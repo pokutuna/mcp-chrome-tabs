@@ -32,7 +32,7 @@ OPTIONS:
 
   --experimental-browser=<b>  Browser implementation to use
                               (default: "chrome")
-                              Options: "chrome", "safari"
+                              Options: "chrome", "safari", "arc"
 
   --max-content-chars=<chars> Maximum content characters per single read
                               (default: 20000)
@@ -96,8 +96,9 @@ function parseCliArgs(args: string[]): CliOptions {
   function parseBrowserOption(browser: string): Browser {
     if (browser === "" || browser === "chrome") return "chrome";
     if (browser === "safari") return "safari";
+    if (browser === "arc") return "arc";
     throw new Error(
-      `Invalid --experimental-browser option: "${browser}". Use "chrome" or "safari".`
+      `Invalid --experimental-browser option: "${browser}". Use "chrome", "safari", or "arc".`
     );
   }
 

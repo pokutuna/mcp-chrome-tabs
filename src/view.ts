@@ -5,7 +5,7 @@ export function formatTabRef(tab: Tab): string {
 }
 
 export function parseTabRef(tabRef: string): TabRef | null {
-  const match = tabRef.match(/ID:(\d+):(\d+)$/);
+  const match = tabRef.match(/^ID:([^:]+):([^:]+)$/);
   if (!match) return null;
   const windowId = match[1];
   const tabId = match[2];
