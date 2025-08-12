@@ -28,7 +28,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.16.0",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "defuddle": "^0.6.4",
     "jsdom": "^24.0.0",
     "zod": "^3.25.76"
