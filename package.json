@@ -7,6 +7,13 @@
   },
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "chrome",
+    "ai",
+    "macos"
+  ],
   "bin": {
     "mcp-chrome-tabs": "./dist/cli.js"
   },
