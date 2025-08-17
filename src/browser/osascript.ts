@@ -55,3 +55,16 @@ export function separator(): string {
   const uniqueId = Math.random().toString(36).substring(2);
   return `<|SEP:${uniqueId}|>`;
 }
+
+export async function executeTabCreationScript(
+  _applicationName: string,
+  url: string,
+  makeTabScript: (escapedUrl: string, sep: string) => string
+): Promise<{ windowId: string; tabId: string }> {
+  const escapedUrl = escapeAppleScript(url);
+  const sep = separator();
+  const appleScript = makeTabScript(escapedUrl, sep);
+  const result = await executeAppleScript(appleScript);
+  const [windowId, tabId] = result.trim().split(sep);
+  return { windowId, tabId };
+}

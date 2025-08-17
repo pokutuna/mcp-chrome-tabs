@@ -1,7 +1,7 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
 import {
-  escapeAppleScript,
   executeAppleScript,
+  executeTabCreationScript,
   separator,
 } from "./osascript.js";
 
@@ -109,14 +109,21 @@ async function getPageContent(
   };
 }
 
-async function openURL(applicationName: string, url: string): Promise<void> {
-  const escapedUrl = escapeAppleScript(url);
-  const appleScript = `
+async function openURL(applicationName: string, url: string): Promise<TabRef> {
+  return executeTabCreationScript(
+    applicationName,
+    url,
+    (escapedUrl, sep) => `
     tell application "${applicationName}"
-      open location "${escapedUrl}"
+      tell front window
+        set newTab to (make new tab with properties {URL:"${escapedUrl}"})
+        set windowId to id of (front window)
+        set tabIndex to index of newTab
+        return windowId & "${sep}" & tabIndex
+      end tell
     end tell
-  `;
-  await executeAppleScript(appleScript);
+  `
+  );
 }
 
 export const safariBrowser: BrowserInterface = {

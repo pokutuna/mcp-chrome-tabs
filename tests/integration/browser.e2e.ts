@@ -89,13 +89,37 @@ test("getTabContent without reference", async ({
 });
 
 test("openURL", async ({ applicationName, browserInterface }) => {
-  await browserInterface.openURL(
+  const tabRef = await browserInterface.openURL(
     applicationName,
     "https://github.com/trending"
   );
 
+  // Verify that openURL returns a TabRef with windowId and tabId
+  expect(tabRef).toHaveProperty("windowId");
+  expect(tabRef).toHaveProperty("tabId");
+  expect(typeof tabRef.windowId).toBe("string");
+  expect(typeof tabRef.tabId).toBe("string");
+
   await expect(async () => {
     const tabs = await browserInterface.getTabList(applicationName);
+    // Verify the tab exists in the tab list
     expect(tabs.some((t) => t.url.includes("github.com/trending"))).toBe(true);
+
+    // Verify the returned TabRef matches a tab in the list
+    const matchingTab = tabs.find(
+      (t) => t.windowId === tabRef.windowId && t.tabId === tabRef.tabId
+    );
+    expect(matchingTab).toBeDefined();
+    expect(matchingTab?.url).toContain("github.com/trending");
   }).toPass();
+
+  // Test that we can immediately read content from the returned tab reference
+  const content = await browserInterface.getPageContent(
+    applicationName,
+    tabRef
+  );
+  expect(content).toHaveProperty("title");
+  expect(content).toHaveProperty("url");
+  expect(content).toHaveProperty("content");
+  expect(content.url).toContain("github.com/trending");
 });

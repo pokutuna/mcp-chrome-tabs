@@ -1,7 +1,7 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
 import {
-  escapeAppleScript,
   executeAppleScript,
+  executeTabCreationScript,
   separator,
 } from "./osascript.js";
 
@@ -129,14 +129,19 @@ async function getPageContent(
   };
 }
 
-async function openURL(applicationName: string, url: string): Promise<void> {
-  const escapedUrl = escapeAppleScript(url);
-  const appleScript = `
+async function openURL(applicationName: string, url: string): Promise<TabRef> {
+  return executeTabCreationScript(
+    applicationName,
+    url,
+    (escapedUrl, sep) => `
     tell application "${applicationName}"
-      open location "${escapedUrl}"
+      set newTab to (make new tab at end of tabs of window 1 with properties {URL:"${escapedUrl}"})
+      set windowId to id of window 1
+      set tabId to id of newTab
+      return windowId & "${sep}" & tabId
     end tell
-  `;
-  await executeAppleScript(appleScript);
+  `
+  );
 }
 
 export const arcBrowser: BrowserInterface = {
