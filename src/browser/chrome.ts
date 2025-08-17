@@ -105,18 +105,24 @@ async function getPageContent(
   return {
     title,
     url,
-    content, // Return raw HTML content
+    content,
   };
 }
 
-async function openURL(applicationName: string, url: string): Promise<void> {
+async function openURL(applicationName: string, url: string): Promise<TabRef> {
   const escapedUrl = escapeAppleScript(url);
+  const sep = separator();
   const appleScript = `
     tell application "${applicationName}"
-      open location "${escapedUrl}"
+      set newTab to (make new tab at end of tabs of window 1 with properties {URL:"${escapedUrl}"})
+      set windowId to id of window 1
+      set tabId to id of newTab
+      return windowId & "${sep}" & tabId
     end tell
   `;
-  await executeAppleScript(appleScript);
+  const result = await executeAppleScript(appleScript);
+  const [windowId, tabId] = result.trim().split(sep);
+  return { windowId, tabId };
 }
 
 export const chromeBrowser: BrowserInterface = {

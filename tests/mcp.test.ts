@@ -249,7 +249,10 @@ describe("MCP Server", () => {
 
   describe("open_in_new_tab tool", () => {
     it("should open URL with correct application name", async () => {
-      vi.mocked(mockBrowserInterface.openURL).mockResolvedValue();
+      vi.mocked(mockBrowserInterface.openURL).mockResolvedValue({
+        windowId: "123",
+        tabId: "456",
+      });
 
       const result = await client.callTool({
         name: "open_in_new_tab",
@@ -265,7 +268,7 @@ describe("MCP Server", () => {
       expect(result.content).toHaveLength(1);
       expect((result.content as any)[0]).toEqual({
         type: "text",
-        text: "Successfully opened the URL",
+        text: "Successfully opened URL in new tab. Tab ID: ID:123:456",
       });
     });
   });
