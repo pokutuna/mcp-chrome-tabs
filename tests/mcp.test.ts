@@ -268,7 +268,7 @@ describe("MCP Server", () => {
       expect(result.content).toHaveLength(1);
       expect((result.content as any)[0]).toEqual({
         type: "text",
-        text: "Successfully opened URL in new tab. Tab ID: ID:123:456",
+        text: "Successfully opened URL in new tab. Tab: `ID:123:456`",
       });
     });
   });

@@ -191,7 +191,7 @@ export async function createMcpServer(
         content: [
           {
             type: "text",
-            text: `Successfully opened URL in new tab. Tab ID: ${tabId}`,
+            text: `Successfully opened URL in new tab. Tab: \`${tabId}\``,
           },
         ],
       };
