@@ -7,6 +7,8 @@ updates:
   open-pull-requests-limit: 10
   assignees:
   - "pokutuna"
+  cooldown:
+    duration: "7-days"
   commit-message:
     prefix: "deps"
     include: "scope"
