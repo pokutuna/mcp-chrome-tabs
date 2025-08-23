@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createMcpServer } from "../src/mcp.js";
+import { createMcpServer, type McpServerOptions } from "../src/mcp.js";
 import type {
   Tab,
   TabContent,
@@ -22,6 +22,14 @@ vi.mock("../src/browser/browser.js", async (importOriginal) => {
     getInterface: vi.fn(() => mockBrowserInterface),
   };
 });
+
+const defaultTestOptions: McpServerOptions = {
+  applicationName: "Google Chrome",
+  browser: "chrome" as const,
+  excludeHosts: [],
+  checkInterval: 0,
+  maxContentChars: 20000,
+};
 
 const mockTabs: Tab[] = [
   {
@@ -73,12 +81,7 @@ describe("MCP Server", () => {
     });
 
     // Create server
-    const options = {
-      applicationName: "Google Chrome",
-      browser: "chrome" as const,
-      excludeHosts: [],
-      checkInterval: 0, // Disable periodic updates in tests
-    };
+    const options = defaultTestOptions;
     server = await createMcpServer(options);
 
     // Connect client and server via in-memory transport
@@ -129,12 +132,7 @@ describe("MCP Server", () => {
 
     it("should filter out excluded domains", async () => {
       // Create server with excluded domains
-      const options = {
-        applicationName: "Google Chrome",
-        browser: "chrome" as const,
-        excludeHosts: ["github.com"],
-        checkInterval: 0, // Disable periodic updates in tests
-      };
+      const options = { ...defaultTestOptions, excludeHosts: ["github.com"] };
       const filteredServer = await createMcpServer(options);
 
       // Create new client for filtered server
@@ -207,12 +205,7 @@ describe("MCP Server", () => {
 
     it("should reject content from excluded domains", async () => {
       // Create server with excluded domains
-      const options = {
-        applicationName: "Google Chrome",
-        browser: "chrome" as const,
-        excludeHosts: ["example.com"],
-        checkInterval: 0, // Disable periodic updates in tests
-      };
+      const options = { ...defaultTestOptions, excludeHosts: ["example.com"] };
       const filteredServer = await createMcpServer(options);
 
       // Create new client for filtered server
@@ -298,10 +291,8 @@ describe("MCP Server", () => {
       it("should reject content from excluded domains", async () => {
         // Create server with excluded domains
         const options = {
-          applicationName: "Google Chrome",
-          browser: "chrome" as const,
+          ...defaultTestOptions,
           excludeHosts: ["example.com"],
-          checkInterval: 0,
         };
         const filteredServer = await createMcpServer(options);
 
@@ -353,10 +344,8 @@ describe("MCP Server", () => {
       it("should reject content from excluded domains", async () => {
         // Create server with excluded domains
         const options = {
-          applicationName: "Google Chrome",
-          browser: "chrome" as const,
+          ...defaultTestOptions,
           excludeHosts: ["example.com"],
-          checkInterval: 0,
         };
         const filteredServer = await createMcpServer(options);
 
@@ -441,12 +430,7 @@ describe("MCP Server", () => {
 
       it("should filter resources by excluded domains", async () => {
         // Create server with excluded domains
-        const options = {
-          applicationName: "Google Chrome",
-          browser: "chrome" as const,
-          excludeHosts: ["github.com"],
-          checkInterval: 0,
-        };
+        const options = { ...defaultTestOptions, excludeHosts: ["github.com"] };
         const filteredServer = await createMcpServer(options);
 
         const filteredClient = new Client({
