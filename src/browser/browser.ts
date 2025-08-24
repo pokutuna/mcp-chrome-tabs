@@ -19,7 +19,7 @@ export type BrowserInterface = {
     applicationName: string,
     tab?: TabRef | null
   ): Promise<TabContent>;
-  openURL(applicationName: string, url: string): Promise<void>;
+  openURL(applicationName: string, url: string): Promise<TabRef>;
 };
 
 import { chromeBrowser } from "./chrome.js";

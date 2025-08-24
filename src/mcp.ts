@@ -185,12 +185,13 @@ export async function createMcpServer(
     async (args) => {
       const { url } = args;
       const browser = getInterface(options.browser);
-      await browser.openURL(options.applicationName, url);
+      const tabRef = await browser.openURL(options.applicationName, url);
+      const tabId = `ID:${tabRef.windowId}:${tabRef.tabId}`;
       return {
         content: [
           {
             type: "text",
-            text: `Successfully opened the URL`,
+            text: `Successfully opened URL in new tab. Tab: \`${tabId}\``,
           },
         ],
       };
