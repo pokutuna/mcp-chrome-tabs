@@ -116,9 +116,9 @@ async function openURL(applicationName: string, url: string): Promise<TabRef> {
     tell application "${applicationName}"
       tell front window
         set newTab to (make new tab with properties {URL:"${escapedUrl}"})
-        set windowId to id of (front window)
+        set windowId to id
         set tabIndex to index of newTab
-        return windowId & "${sep}" & tabIndex
+        return (windowId as string) & "${sep}" & (tabIndex as string)
       end tell
     end tell
   `;
