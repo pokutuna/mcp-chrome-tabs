@@ -8,7 +8,7 @@ updates:
   assignees:
   - "pokutuna"
   cooldown:
-    duration: "7-days"
+    default-days: 5
   commit-message:
     prefix: "deps"
     include: "scope"
