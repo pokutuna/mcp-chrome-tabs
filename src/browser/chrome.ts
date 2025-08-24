@@ -114,8 +114,8 @@ async function openURL(applicationName: string, url: string): Promise<TabRef> {
   const sep = separator();
   const appleScript = `
     tell application "${applicationName}"
-      set newTab to (make new tab at end of tabs of window 1 with properties {URL:"${escapedUrl}"})
-      set windowId to id of window 1
+      set newTab to (make new tab at end of tabs of front window with properties {URL:"${escapedUrl}"})
+      set windowId to id of front window
       set tabId to id of newTab
       return windowId & "${sep}" & tabId
     end tell
