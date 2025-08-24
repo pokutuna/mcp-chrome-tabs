@@ -5,10 +5,10 @@ updates:
   schedule:
     interval: "weekly"
   open-pull-requests-limit: 10
-  reviewers:
-  - "pokutuna"
   assignees:
   - "pokutuna"
+  cooldown:
+    default-days: 5
   commit-message:
     prefix: "deps"
     include: "scope"
