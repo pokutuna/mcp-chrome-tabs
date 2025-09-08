@@ -4,7 +4,7 @@
 
 Model Context Protocol (MCP) server that provides direct access to your browser's open tabs content. No additional fetching or authentication required - simply access what you're already viewing.
 
-![demo](./demo/demo.webp)
+<img src="./demo/demo.webp" width="600px" />
 
 ## Key Features
 
