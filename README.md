@@ -55,17 +55,18 @@ The server accepts optional command line arguments for configuration:
 - `--check-interval` - Interval in milliseconds to check for tab changes and notify clients (default: 3000, set to 0 to disable)
 - `--max-content-chars` - Truncates tab content to a maximum number of characters (default: 20000)
 
-#### Experimental Safari Support
+## Other Browser Support (Experimental)
 
-Limited Safari support is available. Note that Safari lacks unique tab IDs, making it sensitive to tab order changes during execution:
+### Safari
+
+Note that Safari lacks unique tab IDs, making it sensitive to tab order changes during execution:
 
 ```bash
 npx @pokutuna/mcp-chrome-tabs --application-name=Safari --experimental-browser=safari
 ```
 
-#### Experimental Arc Browser Support
 
-Arc Browser support is available. Arc is Chrome-based and supports JavaScript execution from Apple Events:
+### Arc
 
 ```bash
 npx @pokutuna/mcp-chrome-tabs --application-name=Arc --experimental-browser=arc
@@ -101,6 +102,7 @@ Get readable content from a tab in the user's browser.
 Open a URL in a new tab to present content or enable user interaction with webpages.
 
 - `url` (required): URL to open in the browser
+- Returns: Tab ID in format `ID:windowId:tabId` for immediate access to the new tab
 
 </details>
 
