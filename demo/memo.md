@@ -1,0 +1,7 @@
+- $ npx terminalizer record demo
+- run commands
+- edit demo.yml
+- $ npx terminalizer play -s 0.33 demo.yml
+- $ npx terminalizer render -s 3 demo.yml
+- $ mv render* demo.gif
+- $ ffmpeg -i demo.gif -vf "scale=800:-1" demo.webp
