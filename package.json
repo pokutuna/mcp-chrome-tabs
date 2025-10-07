@@ -45,8 +45,8 @@
     "@types/node": "^20.11.17",
     "playwright": "^1.54.1",
     "prettier": "^3.6.2",
-    "tsx": "^4.20.5",
-    "typescript": "~5.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
     "vitest": "^3.2.4"
   }
 }
