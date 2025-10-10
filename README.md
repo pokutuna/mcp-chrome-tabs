@@ -67,7 +67,6 @@ Note that Safari lacks unique tab IDs, making it sensitive to tab order changes 
 npx @pokutuna/mcp-chrome-tabs --application-name=Safari --experimental-browser=safari
 ```
 
-
 ### Arc
 
 ```bash
