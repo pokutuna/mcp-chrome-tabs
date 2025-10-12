@@ -40,7 +40,7 @@ export async function runDefuddleInWorker(
 
       if (output.error) {
         reject(new Error(output.error));
-      } else if (output.content) {
+      } else if (output.content != null) {
         resolve(output.content);
       } else {
         reject(new Error("Failed to parse the page content"));

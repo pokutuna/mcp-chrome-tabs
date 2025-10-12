@@ -16,7 +16,7 @@ try {
   });
 
   const output = {
-    content: result?.content || null,
+    content: result?.content ?? null,
   };
 
   parentPort.postMessage(output);

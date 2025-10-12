@@ -22,18 +22,24 @@ describe("runDefuddleInWorker", () => {
     expect(content).toContain("This is test content");
   });
 
-  it("should handle errors from worker thread", async () => {
-    // Empty HTML should still work, but if Defuddle fails it should propagate
+  it("should handle empty HTML gracefully", async () => {
+    // Empty HTML should be processed successfully (may return empty string)
     const html = "";
     const url = "https://example.com/empty";
 
-    // Should either return content or throw an error
-    try {
-      const content = await runDefuddleInWorker(html, url, 10000);
-      expect(typeof content).toBe("string");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-    }
+    const content = await runDefuddleInWorker(html, url, 10000);
+    expect(typeof content).toBe("string");
+  });
+
+  it("should timeout when processing takes too long", async () => {
+    // Use a very large HTML to trigger timeout with short timeout duration
+    const html =
+      "<html><body>" + "<div>content</div>".repeat(100000) + "</body></html>";
+    const url = "https://example.com/large";
+
+    await expect(
+      runDefuddleInWorker(html, url, 100) // 100ms timeout
+    ).rejects.toThrow(/Worker timeout/);
   });
 
   it("should process multiple requests concurrently", async () => {
