@@ -1,20 +1,20 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    assignees:
-      - "pokutuna"
-    cooldown:
-      default-days: 5
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-    groups:
-      dev-dependencies:
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
+- package-ecosystem: "npm"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  open-pull-requests-limit: 10
+  assignees:
+  - "pokutuna"
+  cooldown:
+    default-days: 5
+  commit-message:
+    prefix: "deps"
+    include: "scope"
+  groups:
+    dev-dependencies:
+      dependency-type: "development"
+      update-types:
+      - "minor"
+      - "patch"

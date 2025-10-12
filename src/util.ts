@@ -24,6 +24,8 @@ interface DefuddleWorkerOutput {
   error?: string;
 }
 
+const WORKER_TIMEOUT_MS = 30000; // 30 seconds timeout
+
 /**
  * Run Defuddle extraction in a worker thread to avoid blocking the main thread
  */
@@ -49,7 +51,18 @@ export async function runDefuddleInWorker(
       workerData: { html, url },
     });
 
+    // Set timeout for worker execution
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(
+        new Error(
+          `Worker timeout: Defuddle extraction took longer than ${WORKER_TIMEOUT_MS}ms`
+        )
+      );
+    }, WORKER_TIMEOUT_MS);
+
     worker.on("message", (output: DefuddleWorkerOutput) => {
+      clearTimeout(timeout);
       if (output.error) {
         reject(new Error(output.error));
       } else if (output.content) {
@@ -60,10 +73,12 @@ export async function runDefuddleInWorker(
     });
 
     worker.on("error", (error) => {
+      clearTimeout(timeout);
       reject(error);
     });
 
     worker.on("exit", (code) => {
+      clearTimeout(timeout);
       if (code !== 0) {
         reject(new Error(`Worker stopped with exit code ${code}`));
       }
