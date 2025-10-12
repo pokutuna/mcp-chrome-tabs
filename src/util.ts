@@ -18,10 +18,9 @@ export async function withMockConsole<T>(
   }
 }
 
-interface DefuddleWorkerOutput {
-  content: string | null;
-  error?: string;
-}
+type DefuddleWorkerOutput =
+  | { content: string; error?: never }
+  | { content: null; error: string };
 
 /**
  * Run Defuddle extraction in a worker thread to avoid blocking the main thread
@@ -51,6 +50,8 @@ export async function runDefuddleInWorker(
 
     worker.on("message", (output: DefuddleWorkerOutput) => {
       clearTimeout(timeout);
+      worker.terminate();
+
       if (output.error) {
         reject(new Error(output.error));
       } else if (output.content) {
@@ -62,14 +63,8 @@ export async function runDefuddleInWorker(
 
     worker.on("error", (error) => {
       clearTimeout(timeout);
+      worker.terminate();
       reject(error);
-    });
-
-    worker.on("exit", (code) => {
-      clearTimeout(timeout);
-      if (code !== 0) {
-        reject(new Error(`Worker stopped with exit code ${code}`));
-      }
     });
   });
 }
