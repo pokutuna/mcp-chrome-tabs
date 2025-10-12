@@ -15,8 +15,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import * as view from "./view.js";
-import { Defuddle } from "defuddle/node";
-import { withMockConsole } from "./util.js";
+import { runDefuddleInWorker } from "./util.js";
 
 export type McpServerOptions = {
   applicationName: string;
@@ -24,6 +23,7 @@ export type McpServerOptions = {
   checkInterval: number;
   browser: Browser;
   maxContentChars: number;
+  extractionTimeout: number;
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
@@ -48,19 +48,22 @@ async function getTab(
   if (isExcludedHost(raw.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");
   }
-  const { result } = await withMockConsole(() =>
-    Defuddle(raw.content, raw.url, {
-      markdown: true,
-    })
-  );
-  if (!result?.content) {
-    throw new Error("Failed to parse the page content");
+  try {
+    const content = await runDefuddleInWorker(
+      raw.content,
+      raw.url,
+      opts.extractionTimeout
+    );
+    return {
+      title: raw.title,
+      url: raw.url,
+      content,
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to extract content: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
-  return {
-    title: raw.title,
-    url: raw.url,
-    content: result.content,
-  };
 }
 
 async function packageVersion(): Promise<string> {

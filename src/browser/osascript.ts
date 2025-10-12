@@ -43,7 +43,7 @@ export async function executeAppleScript(script: string): Promise<string> {
       ["-e", script],
       {
         timeout: 5 * 1000,
-        maxBuffer: 5 * 1024 * 1024, // 5MB
+        maxBuffer: 10 * 1024 * 1024, // 10MB
       }
     );
     if (stderr) console.error("AppleScript stderr:", stderr);
