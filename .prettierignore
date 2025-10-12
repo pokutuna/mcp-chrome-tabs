@@ -3,6 +3,3 @@ dist/
 
 # Dependencies
 node_modules/
-
-# GitHub configuration (preserve original indentation)
-.github/dependabot.yml
