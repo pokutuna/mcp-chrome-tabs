@@ -23,7 +23,7 @@ export type McpServerOptions = {
   checkInterval: number;
   browser: Browser;
   maxContentChars: number;
-  workerTimeoutMs: number;
+  extractionTimeout: number;
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
@@ -52,7 +52,7 @@ async function getTab(
     const content = await runDefuddleInWorker(
       raw.content,
       raw.url,
-      opts.workerTimeoutMs
+      opts.extractionTimeout
     );
     return {
       title: raw.title,
