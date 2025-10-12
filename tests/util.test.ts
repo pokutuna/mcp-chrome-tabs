@@ -75,7 +75,7 @@ describe("runDefuddleInWorker", () => {
     `;
     const url = "https://example.com/test";
 
-    const content = await runDefuddleInWorker(html, url);
+    const content = await runDefuddleInWorker(html, url, 10000);
 
     expect(content).toBeTruthy();
     expect(content).toContain("Test Heading");
@@ -89,7 +89,7 @@ describe("runDefuddleInWorker", () => {
 
     // Should either return content or throw an error
     try {
-      const content = await runDefuddleInWorker(html, url);
+      const content = await runDefuddleInWorker(html, url, 10000);
       expect(typeof content).toBe("string");
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
@@ -123,8 +123,8 @@ describe("runDefuddleInWorker", () => {
     `;
 
     const [content1, content2] = await Promise.all([
-      runDefuddleInWorker(html1, "https://example.com/1"),
-      runDefuddleInWorker(html2, "https://example.com/2"),
+      runDefuddleInWorker(html1, "https://example.com/1", 10000),
+      runDefuddleInWorker(html2, "https://example.com/2", 10000),
     ]);
 
     expect(content1).toContain("page 1");

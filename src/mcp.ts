@@ -23,6 +23,7 @@ export type McpServerOptions = {
   checkInterval: number;
   browser: Browser;
   maxContentChars: number;
+  workerTimeoutMs: number;
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
@@ -47,12 +48,22 @@ async function getTab(
   if (isExcludedHost(raw.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");
   }
-  const content = await runDefuddleInWorker(raw.content, raw.url);
-  return {
-    title: raw.title,
-    url: raw.url,
-    content,
-  };
+  try {
+    const content = await runDefuddleInWorker(
+      raw.content,
+      raw.url,
+      opts.workerTimeoutMs
+    );
+    return {
+      title: raw.title,
+      url: raw.url,
+      content,
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to extract content: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 async function packageVersion(): Promise<string> {

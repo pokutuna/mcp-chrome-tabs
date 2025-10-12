@@ -37,6 +37,10 @@ OPTIONS:
   --max-content-chars=<chars> Maximum content characters per single read
                               (default: 20000)
 
+  --worker-timeout=<ms>       Timeout for content extraction worker in milliseconds
+                              (default: 10000)
+                              Example: 5000
+
   --help                      Show this help message
 
 
@@ -84,6 +88,10 @@ function parseCliArgs(args: string[]): CliOptions {
         type: "string",
         default: "20000",
       },
+      "worker-timeout": {
+        type: "string",
+        default: "10000",
+      },
       help: {
         type: "boolean",
         default: false,
@@ -121,6 +129,7 @@ function parseCliArgs(args: string[]): CliOptions {
       .filter(Boolean),
     checkInterval: parseIntWithDefault(values["check-interval"], 3000, 0),
     maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
+    workerTimeoutMs: parseIntWithDefault(values["worker-timeout"], 10000, 1000),
     help: values.help,
   };
   return parsed;
