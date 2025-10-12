@@ -10,13 +10,6 @@ if (!parentPort) {
 
 const input = workerData;
 
-// Mock console.log to suppress Defuddle's internal logging
-const originalConsoleLog = console.log;
-const logs = [];
-console.log = (...args) => {
-  logs.push(args);
-};
-
 try {
   const result = await Defuddle(input.html, input.url, {
     markdown: true,
@@ -34,6 +27,4 @@ try {
   };
 
   parentPort.postMessage(output);
-} finally {
-  console.log = originalConsoleLog;
 }
