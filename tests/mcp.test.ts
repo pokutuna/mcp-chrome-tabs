@@ -322,12 +322,31 @@ describe("MCP Server", () => {
     });
 
     describe("tabs resource template", () => {
-      it("should return content of specific tab", async () => {
+      it("should return content of specific tab when checkInterval > 0", async () => {
+        // Create server with checkInterval > 0
+        const options = {
+          ...defaultTestOptions,
+          checkInterval: 3000,
+        };
+        const subscriptionServer = await createMcpServer(options);
+
+        const subscriptionClient = new Client({
+          name: "test client",
+          version: "0.1.0",
+        });
+
+        const [clientTransport, serverTransport] =
+          InMemoryTransport.createLinkedPair();
+        await Promise.all([
+          subscriptionClient.connect(clientTransport),
+          subscriptionServer.connect(serverTransport),
+        ]);
+
         vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
           mockPageContent
         );
 
-        const result = await client.readResource({
+        const result = await subscriptionClient.readResource({
           uri: "tab://1001/2001",
         });
 
@@ -342,11 +361,12 @@ describe("MCP Server", () => {
         expect(content.text).toContain("This is test content.");
       });
 
-      it("should reject content from excluded domains", async () => {
-        // Create server with excluded domains
+      it("should reject content from excluded domains when checkInterval > 0", async () => {
+        // Create server with excluded domains and checkInterval > 0
         const options = {
           ...defaultTestOptions,
           excludeHosts: ["example.com"],
+          checkInterval: 3000,
         };
         const filteredServer = await createMcpServer(options);
 
@@ -375,10 +395,52 @@ describe("MCP Server", () => {
     });
 
     describe("resource listing", () => {
-      it("should list available resources", async () => {
+      it("should only list current_tab resource when checkInterval is 0", async () => {
         vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
 
         const result = await client.listResources();
+
+        // Should only have current_tab resource
+        expect(result.resources.length).toBe(1);
+
+        // Check current_tab resource
+        const currentTabResource = result.resources.find(
+          (r) => r.uri === "tab://current"
+        );
+        expect(currentTabResource).toBeDefined();
+        expect(currentTabResource?.name).toBe("current_tab");
+        expect(currentTabResource?.mimeType).toBe("text/markdown");
+
+        // Should not have any tab://{windowId}/{tabId} resources
+        const tabResources = result.resources.filter(
+          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current"
+        );
+        expect(tabResources).toHaveLength(0);
+      });
+
+      it("should list all tab resources when checkInterval > 0", async () => {
+        // Create server with checkInterval > 0
+        const options = {
+          ...defaultTestOptions,
+          checkInterval: 3000,
+        };
+        const subscriptionServer = await createMcpServer(options);
+
+        const subscriptionClient = new Client({
+          name: "test client",
+          version: "0.1.0",
+        });
+
+        const [clientTransport, serverTransport] =
+          InMemoryTransport.createLinkedPair();
+        await Promise.all([
+          subscriptionClient.connect(clientTransport),
+          subscriptionServer.connect(serverTransport),
+        ]);
+
+        vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
+
+        const result = await subscriptionClient.listResources();
 
         // Should have current_tab resource plus individual tab resources from template
         expect(result.resources.length).toBeGreaterThanOrEqual(1);
@@ -391,7 +453,7 @@ describe("MCP Server", () => {
         expect(currentTabResource?.name).toBe("current_tab");
         expect(currentTabResource?.mimeType).toBe("text/markdown");
 
-        // Check that tab resources are generated from template (should be mockTabs.length individual tab resources)
+        // Check that tab resources are generated from template
         const tabResources = result.resources.filter(
           (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current"
         );
@@ -405,33 +467,13 @@ describe("MCP Server", () => {
         expect(firstTabResource.mimeType).toBe("text/markdown");
       });
 
-      it("should list tab resources from template", async () => {
-        vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
-
-        const result = await client.listResources();
-
-        // Template should generate individual tab resources
-        const tabResources = result.resources.filter(
-          (r) => r.uri?.startsWith("tab://") && r.uri !== "tab://current"
-        );
-        expect(tabResources).toHaveLength(mockTabs.length);
-
-        // Verify tab resources match mock data
-        tabResources.forEach((resource, index) => {
-          const expectedDomain = new URL(mockTabs[index].url).hostname;
-          expect(resource.name).toBe(
-            `${mockTabs[index].title} (${expectedDomain})`
-          );
-          expect(resource.mimeType).toBe("text/markdown");
-          expect(resource.uri).toBe(
-            `tab://${mockTabs[index].windowId}/${mockTabs[index].tabId}`
-          );
-        });
-      });
-
-      it("should filter resources by excluded domains", async () => {
-        // Create server with excluded domains
-        const options = { ...defaultTestOptions, excludeHosts: ["github.com"] };
+      it("should filter resources by excluded domains when checkInterval > 0", async () => {
+        // Create server with excluded domains and checkInterval > 0
+        const options = {
+          ...defaultTestOptions,
+          excludeHosts: ["github.com"],
+          checkInterval: 3000,
+        };
         const filteredServer = await createMcpServer(options);
 
         const filteredClient = new Client({

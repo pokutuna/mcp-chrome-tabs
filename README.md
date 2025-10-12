@@ -11,7 +11,7 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 - **Direct browser tab access** - No web scraping needed, reads content from already open tabs
 - **Content optimized for AI** - Automatic content extraction and markdown conversion to reduce token usage
 - **Active tab shortcut** - Instant access to currently focused tab without specifying IDs
-- **MCP listChanged notifications** - Follows MCP protocol to notify tab changes (support is limited in most clients)
+- **MCP listChanged notifications** - Follows MCP protocol to notify tab changes (set `--check-interval` to enable)
 
 ## Requirements
 
@@ -52,13 +52,43 @@ claude mcp add -s user chrome-tabs -- npx -y @pokutuna/mcp-chrome-tabs@latest
 
 The server accepts optional command line arguments for configuration:
 
-- `--application-name` - Application name to control (default: "Google Chrome")
-- `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
-- `--check-interval` - Interval in milliseconds to check for tab changes and notify clients (default: 3000, set to 0 to disable)
-- `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
-- `--max-content-chars` - Truncates tab content to a maximum number of characters (default: 20000)
+**Content Extraction Options**
+- `--max-content-chars` - Maximum content characters per single read (default: 20000)
 - `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 20000)
+- `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
+
+**Resource Options**
+- `--check-interval` - Interval in milliseconds to check for tab changes and send listChanged notifications (default: 0 disabled, set to 3000 for 3 seconds)
+
+**Browser Options**
+- `--application-name` - Application name to control (default: "Google Chrome")
+- `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
+
+**Other Options**
 - `--help` - Show help message with all available options
+
+### Resource Subscription (Optional)
+
+Setting `--check-interval` to a value greater than 0 enables resource subscription. When enabled, the server monitors tab list changes and sends MCP `listChanged` notifications to prompt clients to refresh their resource lists. This also makes `tab://{windowId}/{tabId}` resources available for all open tabs.
+
+In 2025-10, few MCP clients support resource subscriptions. Resource subscription is disabled by default (`--check-interval=0`). Most users only need the `tab://current` resource, which is always available.
+
+To enable resource subscription:
+
+```json
+{
+  "mcpServers": {
+    "chrome-tabs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@pokutuna/mcp-chrome-tabs@latest",
+        "--check-interval=3000"
+      ]
+    }
+  }
+}
+```
 
 ## Other Browser Support (Experimental)
 
@@ -120,6 +150,7 @@ Resource representing the content of the currently active tab.
 - **URI**: `tab://current`
 - **MIME type**: `text/markdown`
 - **Content**: Real-time content of the active browser tab
+- **Always available** regardless of `--check-interval` setting
 
 </details>
 
@@ -131,6 +162,8 @@ Resource template for accessing specific tabs.
 - **URI pattern**: `tab://{windowId}/{tabId}`
 - **MIME type**: `text/markdown`
 - **Content**: Content of the specified tab
+- **Availability**: Only when `--check-interval` is set to a value greater than 0
 - Resources are dynamically generated based on currently open tabs
+- When enabled, the server monitors tab changes and sends MCP listChanged notifications
 
 </details>
