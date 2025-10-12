@@ -12,7 +12,6 @@
 
 import { Defuddle } from "defuddle/node";
 import { JSDOM } from "jsdom";
-import { withMockConsole } from "../src/util.js";
 
 interface ContentResult {
   level: "auto" | "text" | "html";
@@ -32,9 +31,7 @@ async function extractContentWithLevels(
 
   // Level: auto (defuddle)
   try {
-    const { result: defuddleResult } = await withMockConsole(() =>
-      Defuddle(html, url, { markdown: true })
-    );
+    const defuddleResult = await Defuddle(html, url, { markdown: true });
     const autoContent = defuddleResult?.content || "";
     results.push({
       level: "auto",

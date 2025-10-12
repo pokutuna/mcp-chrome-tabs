@@ -2,22 +2,6 @@ import { Worker } from "worker_threads";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
-export async function withMockConsole<T>(
-  fn: () => Promise<T>
-): Promise<{ result: T; logs: unknown[][] }> {
-  const originalConsoleLog = console.log;
-  const logs: unknown[][] = [];
-  console.log = (...args: unknown[]) => {
-    logs.push(args);
-  };
-  try {
-    const result = await fn();
-    return { result, logs };
-  } finally {
-    console.log = originalConsoleLog;
-  }
-}
-
 type DefuddleWorkerOutput =
   | { content: string; error?: never }
   | { content: null; error: string };
