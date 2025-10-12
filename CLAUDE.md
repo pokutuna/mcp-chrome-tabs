@@ -75,5 +75,5 @@ Command-line options:
 - `--check-interval` - Tab change notification interval in ms (default: 3000)
 - `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
 - `--max-content-chars` - Maximum content characters per single read (default: 20000)
-- `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 10000)
+- `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 20000)
 - `--help` - Show help message with all available options

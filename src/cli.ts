@@ -38,7 +38,7 @@ OPTIONS:
                               (default: 20000)
 
   --extraction-timeout=<ms>   Timeout for content extraction worker in milliseconds
-                              (default: 10000)
+                              (default: 20000)
                               Example: 5000
 
   --help                      Show this help message
@@ -90,7 +90,7 @@ function parseCliArgs(args: string[]): CliOptions {
       },
       "extraction-timeout": {
         type: "string",
-        default: "10000",
+        default: "20000",
       },
       help: {
         type: "boolean",
@@ -131,7 +131,7 @@ function parseCliArgs(args: string[]): CliOptions {
     maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
     extractionTimeout: parseIntWithDefault(
       values["extraction-timeout"],
-      10000,
+      20000,
       1000
     ),
     help: values.help,

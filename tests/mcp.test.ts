@@ -29,7 +29,7 @@ const defaultTestOptions: McpServerOptions = {
   excludeHosts: [],
   checkInterval: 0,
   maxContentChars: 20000,
-  extractionTimeout: 10000,
+  extractionTimeout: 20000,
 };
 
 const mockTabs: Tab[] = [

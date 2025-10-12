@@ -57,7 +57,7 @@ The server accepts optional command line arguments for configuration:
 - `--check-interval` - Interval in milliseconds to check for tab changes and notify clients (default: 3000, set to 0 to disable)
 - `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
 - `--max-content-chars` - Truncates tab content to a maximum number of characters (default: 20000)
-- `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 10000)
+- `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 20000)
 - `--help` - Show help message with all available options
 
 ## Other Browser Support (Experimental)
