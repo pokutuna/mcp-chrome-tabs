@@ -20,6 +20,8 @@ export async function runDefuddleInWorker(
 
     const worker = new Worker(workerPath, {
       workerData: { html, url },
+      stdout: true, // Don't pipe worker stdout to parent
+      stderr: true, // Don't pipe worker stderr to parent
     });
 
     // Set timeout for worker execution
