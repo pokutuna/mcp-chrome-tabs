@@ -17,23 +17,7 @@ MCP Chrome Tabs Server
 USAGE:
   mcp-chrome-tabs [OPTIONS]
 
-OPTIONS:
-  --application-name=<name>   Application name to control via AppleScript
-                              (default: "Google Chrome")
-                              Example: "Google Chrome Canary"
-
-  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
-                              (default: "")
-                              Example: "github.com,example.com,test.com"
-
-  --check-interval=<ms>       Interval for checking browser tabs in milliseconds
-                              (default: 3000, set to 0 to disable)
-                              Example: 1000
-
-  --experimental-browser=<b>  Browser implementation to use
-                              (default: "chrome")
-                              Options: "chrome", "safari", "arc"
-
+CONTENT EXTRACTION OPTIONS:
   --max-content-chars=<chars> Maximum content characters per single read
                               (default: 20000)
 
@@ -41,6 +25,26 @@ OPTIONS:
                               (default: 20000)
                               Example: 5000
 
+  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
+                              (default: "")
+                              Example: "github.com,example.com,test.com"
+
+RESOURCE OPTIONS:
+  --check-interval=<ms>       Interval for checking browser tabs in milliseconds
+                              and sending listChanged notifications
+                              (default: 0 disabled, set to 3000 for 3 seconds)
+                              Example: 3000
+
+BROWSER OPTIONS:
+  --application-name=<name>   Application name to control via AppleScript
+                              (default: "Google Chrome")
+                              Example: "Google Chrome Canary"
+
+  --experimental-browser=<b>  Browser implementation to use
+                              (default: "chrome")
+                              Options: "chrome", "safari", "arc"
+
+OTHER OPTIONS:
   --help                      Show this help message
 
 
@@ -68,22 +72,6 @@ function parseCliArgs(args: string[]): CliOptions {
   const { values } = parseArgs({
     args,
     options: {
-      "application-name": {
-        type: "string",
-        default: "Google Chrome",
-      },
-      "exclude-hosts": {
-        type: "string",
-        default: "",
-      },
-      "check-interval": {
-        type: "string",
-        default: "3000",
-      },
-      "experimental-browser": {
-        type: "string",
-        default: "",
-      },
       "max-content-chars": {
         type: "string",
         default: "20000",
@@ -91,6 +79,22 @@ function parseCliArgs(args: string[]): CliOptions {
       "extraction-timeout": {
         type: "string",
         default: "20000",
+      },
+      "check-interval": {
+        type: "string",
+        default: "0",
+      },
+      "exclude-hosts": {
+        type: "string",
+        default: "",
+      },
+      "application-name": {
+        type: "string",
+        default: "Google Chrome",
+      },
+      "experimental-browser": {
+        type: "string",
+        default: "",
       },
       help: {
         type: "boolean",
@@ -127,7 +131,7 @@ function parseCliArgs(args: string[]): CliOptions {
       .split(",")
       .map((d) => d.trim())
       .filter(Boolean),
-    checkInterval: parseIntWithDefault(values["check-interval"], 3000, 0),
+    checkInterval: parseIntWithDefault(values["check-interval"], 0, 0),
     maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
     extractionTimeout: parseIntWithDefault(
       values["extraction-timeout"],

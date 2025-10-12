@@ -70,10 +70,17 @@ This project is macOS-only and requires:
 
 Command-line options:
 
-- `--application-name` - Target browser application (default: "Google Chrome")
-- `--exclude-hosts` - Comma-separated domains to exclude from access
-- `--check-interval` - Tab change notification interval in ms (default: 3000)
-- `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
+**Content Extraction Options**
 - `--max-content-chars` - Maximum content characters per single read (default: 20000)
 - `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 20000)
+- `--exclude-hosts` - Comma-separated domains to exclude from access
+
+**Resource Options**
+- `--check-interval` - Tab change notification interval in ms (default: 0 disabled, set to 3000 for 3 seconds)
+
+**Browser Options**
+- `--application-name` - Target browser application (default: "Google Chrome")
+- `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
+
+**Other Options**
 - `--help` - Show help message with all available options

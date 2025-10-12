@@ -227,46 +227,50 @@ export async function createMcpServer(
     }
   );
 
-  server.registerResource(
-    "tabs",
-    new ResourceTemplate(view.uriTemplate, {
-      list: async () => {
-        const tabs = await listTabs(options);
-        return {
-          resources: tabs.map((tab) => ({
-            uri: view.formatUri(tab),
-            name: view.formatTabName(tab),
-            mimeType: "text/markdown",
-          })),
-        };
+  // Register tab://{windowId}/{tabId} resources only when checkInterval > 0
+  // In 2025-10, few MCP clients support resource subscriptions, so this is disabled by default
+  if (options.checkInterval > 0) {
+    server.registerResource(
+      "tabs",
+      new ResourceTemplate(view.uriTemplate, {
+        list: async () => {
+          const tabs = await listTabs(options);
+          return {
+            resources: tabs.map((tab) => ({
+              uri: view.formatUri(tab),
+              name: view.formatTabName(tab),
+              mimeType: "text/markdown",
+            })),
+          };
+        },
+      }),
+      {
+        title: "Browser Tabs",
+        description: "Content of a specific tab in the user's browser",
+        mimeType: "text/markdown",
       },
-    }),
-    {
-      title: "Browser Tabs",
-      description: "Content of a specific tab in the user's browser",
-      mimeType: "text/markdown",
-    },
-    async (uri, { windowId, tabId }) => {
-      const tabRef: TabRef = {
-        windowId: String(windowId),
-        tabId: String(tabId),
-      };
-      const tab = await getTab(tabRef, options);
-      // TODO: Add pagination support for resources (startIndex parameter)
-      const text = view.formatTabContent(tab, 0, undefined);
-      return {
-        contents: [
-          {
-            uri: uri.href,
-            name: view.formatTabName(tab),
-            mimeType: "text/markdown",
-            text,
-            size: new Blob([text]).size,
-          },
-        ],
-      };
-    }
-  );
+      async (uri, { windowId, tabId }) => {
+        const tabRef: TabRef = {
+          windowId: String(windowId),
+          tabId: String(tabId),
+        };
+        const tab = await getTab(tabRef, options);
+        // TODO: Add pagination support for resources (startIndex parameter)
+        const text = view.formatTabContent(tab, 0, undefined);
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              name: view.formatTabName(tab),
+              mimeType: "text/markdown",
+              text,
+              size: new Blob([text]).size,
+            },
+          ],
+        };
+      }
+    );
+  }
 
   if (options.checkInterval > 0) {
     let lastHash: string = hashTabList(await listTabs(options));
