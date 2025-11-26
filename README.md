@@ -27,7 +27,9 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 First, enable "Allow JavaScript from Apple Events" in Chrome:
 
 - (en) **View** > **Developer** > **Allow JavaScript from Apple Events**
-- (ja) **表示** > **開発 / 管理** > **Apple Events からのJavaScript を許可**
+- (ja) **表示** > **開発 / 管理** > **Apple Events からの JavaScript を許可**
+
+When you first use the MCP server, macOS will prompt you to grant AppleScript automation permission to your MCP client (e.g., Claude Desktop, Claude Code). Click **OK** to allow access to Chrome. If you accidentally dismissed the dialog, you can enable it in **System Settings** > **Privacy & Security** > **Automation**.
 
 Standard config works in most MCP clients (e.g., `.claude.json`, `.mcp.json`):
 
@@ -167,3 +169,11 @@ Resource template for accessing specific tabs.
 - When enabled, the server monitors tab changes and sends MCP listChanged notifications
 
 </details>
+
+## Troubleshooting
+
+### `Current Tabs (0 tabs exists)` is displayed
+
+Ensure "Allow JavaScript from Apple Events" is enabled in Chrome (see [Getting Started](#getting-started)).
+
+If it was working before, try restarting your browser.
