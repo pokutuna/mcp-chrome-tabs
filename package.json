@@ -19,6 +19,7 @@
   },
   "files": [
     "dist/**/*",
+    "CHANGELOG.md",
     "README.md",
     "package.json"
   ],
