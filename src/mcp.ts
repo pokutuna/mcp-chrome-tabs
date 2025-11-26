@@ -93,6 +93,7 @@ export async function createMcpServer(
   const server = new McpServer(
     {
       name: "chrome-tabs",
+      title: "Chrome Tabs",
       version: await packageVersion(),
     },
     {
@@ -109,6 +110,7 @@ export async function createMcpServer(
   server.registerTool(
     "list_tabs",
     {
+      title: "List Tabs",
       description:
         "List all open tabs in the user's browser with their titles and tab references.",
       inputSchema: {
@@ -138,6 +140,7 @@ export async function createMcpServer(
   server.registerTool(
     "read_tab_content",
     {
+      title: "Read Tab Content",
       description:
         "Get readable content from a tab in the user's browser. Provide ID (from list_tabs output) to read a specific tab, or omit for the active tab.",
       inputSchema: {
@@ -179,6 +182,7 @@ export async function createMcpServer(
   server.registerTool(
     "open_in_new_tab",
     {
+      title: "Open in New Tab",
       description:
         "Open a URL in a new tab to present content or enable user interaction with webpages",
       inputSchema: {
@@ -217,10 +221,8 @@ export async function createMcpServer(
         contents: [
           {
             uri: uri.href,
-            name: view.formatTabName(tab),
             text,
             mimeType: "text/markdown",
-            size: new Blob([text]).size,
           },
         ],
       };
@@ -261,10 +263,8 @@ export async function createMcpServer(
           contents: [
             {
               uri: uri.href,
-              name: view.formatTabName(tab),
               mimeType: "text/markdown",
               text,
-              size: new Blob([text]).size,
             },
           ],
         };
