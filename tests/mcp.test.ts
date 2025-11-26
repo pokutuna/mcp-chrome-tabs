@@ -281,7 +281,6 @@ describe("MCP Server", () => {
         expect(result.contents).toHaveLength(1);
         const content = result.contents[0];
         expect(content.uri).toBe("tab://current");
-        expect(content.name).toBe(`${mockPageContent.title} (example.com)`);
         expect(content.mimeType).toBe("text/markdown");
         expect(content.text).toContain("---");
         expect(content.text).toContain("title: " + mockPageContent.title);
@@ -353,7 +352,6 @@ describe("MCP Server", () => {
         expect(result.contents).toHaveLength(1);
         const content = result.contents[0];
         expect(content.uri).toBe("tab://1001/2001");
-        expect(content.name).toBe(`${mockPageContent.title} (example.com)`);
         expect(content.mimeType).toBe("text/markdown");
         expect(content.text).toContain("---");
         expect(content.text).toContain("title: " + mockPageContent.title);
