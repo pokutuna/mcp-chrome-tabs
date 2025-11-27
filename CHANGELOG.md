@@ -49,14 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2025-08-01
 
-### Changed
-
-- Replace @mozilla/readability with defuddle for content extraction (#7)
-
 ### Added
 
 - E2E tests with Playwright (#6)
 - MIT License
+
+### Changed
+
+- Replace @mozilla/readability with defuddle for content extraction (#7)
 
 ## [0.2.0] - 2025-07-29
 
