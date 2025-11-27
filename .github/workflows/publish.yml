@@ -1,3 +1,37 @@
+# Publish Package Workflow
+#
+# This workflow automatically publishes the package to npm and creates a GitHub release
+# when a version tag is pushed.
+#
+# Release Steps:
+#   1. Decide the new version number
+#      - Follow Semantic Versioning: MAJOR.MINOR.PATCH
+#      - MAJOR: breaking changes
+#      - MINOR: new features (backward compatible)
+#      - PATCH: bug fixes (backward compatible)
+#
+#   2. Update CHANGELOG.md
+#      - Move items from [Unreleased] to a new version section
+#      - Add the release date (YYYY-MM-DD)
+#      - Update comparison links at the bottom
+#
+#   3. Commit CHANGELOG.md
+#      - git add CHANGELOG.md
+#      - git commit -m "Update CHANGELOG for vX.Y.Z"
+#
+#   4. Create version commit and tag with npm version
+#      - npm version <major|minor|patch>
+#      - This updates package.json and creates a git tag (vX.Y.Z)
+#
+#   5. Push commits and tag
+#      - git push origin main --tags
+#
+#   The workflow will then automatically:
+#   - Run tests
+#   - Build the package
+#   - Publish to npm (using OIDC trusted publishing)
+#   - Create a GitHub release with auto-generated notes
+
 name: Publish Package
 
 on:
@@ -14,6 +48,15 @@ jobs:
       id-token: write # for NPM Trusted Publisher OIDC
     steps:
       - uses: actions/checkout@v4
+      - name: Verify CHANGELOG contains release version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! grep -q "^## \[${VERSION}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md does not contain an entry for version ${VERSION}"
+            echo "Please update CHANGELOG.md before releasing."
+            exit 1
+          fi
+          echo "Found CHANGELOG entry for version ${VERSION}"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
