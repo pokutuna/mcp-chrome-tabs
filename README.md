@@ -59,7 +59,7 @@ You can also install this as a Claude Code plugin:
 /plugin marketplace add pokutuna/mcp-chrome-tabs
 
 # Install the plugin
-/plugin install mcp-chrome-tabs@pokutuna-plugins
+/plugin install mcp-chrome-tabs@mcp-chrome-tabs
 ```
 
 ### Command Line Options
