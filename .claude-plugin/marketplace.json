@@ -1,0 +1,13 @@
+{
+  "name": "mcp-chrome-tabs",
+  "owner": {
+    "name": "pokutuna",
+    "email": "mail@pokutuna.com"
+  },
+  "plugins": [
+    {
+      "name": "mcp-chrome-tabs",
+      "source": "./"
+    }
+  ]
+}

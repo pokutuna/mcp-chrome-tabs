@@ -1,0 +1,18 @@
+{
+  "name": "mcp-chrome-tabs",
+  "description": "Direct access to your browser's open tabs content via MCP",
+  "author": {
+    "name": "pokutuna",
+    "url": "https://github.com/pokutuna"
+  },
+  "homepage": "https://github.com/pokutuna/mcp-chrome-tabs",
+  "repository": "https://github.com/pokutuna/mcp-chrome-tabs",
+  "license": "MIT",
+  "keywords": ["mcp", "chrome", "browser", "tabs", "macos"],
+  "mcpServers": {
+    "chrome-tabs": {
+      "command": "npx",
+      "args": ["-y", "@pokutuna/mcp-chrome-tabs@latest"]
+    }
+  }
+}
