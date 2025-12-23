@@ -50,6 +50,18 @@ Or for Claude Code:
 claude mcp add -s user chrome-tabs -- npx -y @pokutuna/mcp-chrome-tabs@latest
 ```
 
+### Claude Code Plugin
+
+You can also install this as a Claude Code plugin:
+
+```bash
+# Add the marketplace
+/plugin marketplace add pokutuna/mcp-chrome-tabs
+
+# Install the plugin
+/plugin install mcp-chrome-tabs@pokutuna-plugins
+```
+
 ### Command Line Options
 
 The server accepts optional command line arguments for configuration:

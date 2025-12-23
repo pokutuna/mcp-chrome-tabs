@@ -1,0 +1,25 @@
+{
+  "name": "pokutuna-plugins",
+  "owner": {
+    "name": "pokutuna",
+    "email": "popopopopokutuna@gmail.com"
+  },
+  "metadata": {
+    "description": "MCP servers for Claude Code by pokutuna"
+  },
+  "plugins": [
+    {
+      "name": "mcp-chrome-tabs",
+      "source": "./",
+      "description": "Direct access to your browser's open tabs content via MCP. No additional fetching or authentication required.",
+      "version": "0.7.0",
+      "author": {
+        "name": "pokutuna",
+        "url": "https://github.com/pokutuna"
+      },
+      "homepage": "https://github.com/pokutuna/mcp-chrome-tabs",
+      "license": "MIT",
+      "keywords": ["mcp", "chrome", "browser", "tabs", "macos"]
+    }
+  ]
+}
