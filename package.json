@@ -45,9 +45,9 @@
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
     "playwright": "^1.54.1",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   }
 }
