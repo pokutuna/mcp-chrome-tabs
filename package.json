@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.4.0",
     "playwright": "^1.54.1",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",
