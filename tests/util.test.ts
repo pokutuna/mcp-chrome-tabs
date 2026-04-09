@@ -22,8 +22,7 @@ describe("runDefuddleInWorker", () => {
     expect(content).toContain("This is test content");
   });
 
-  it("should handle empty HTML gracefully", async () => {
-    // Empty HTML causes defuddle to throw an error
+  it("should throw error for empty HTML", async () => {
     const html = "";
     const url = "https://example.com/empty";
 
