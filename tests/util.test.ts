@@ -22,13 +22,11 @@ describe("runDefuddleInWorker", () => {
     expect(content).toContain("This is test content");
   });
 
-  it("should handle empty HTML gracefully", async () => {
-    // Empty HTML should be processed successfully (may return empty string)
+  it("should throw error for empty HTML", async () => {
     const html = "";
     const url = "https://example.com/empty";
 
-    const content = await runDefuddleInWorker(html, url, 10000);
-    expect(typeof content).toBe("string");
+    await expect(runDefuddleInWorker(html, url, 10000)).rejects.toThrow();
   });
 
   it("should timeout when processing takes too long", async () => {
