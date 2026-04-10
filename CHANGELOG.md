@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-10
+
+### Changed
+
+- Update defuddle from 0.12.0 to 0.15.0 (#122)
+  - jsdom is no longer used; content extraction may be faster on some sites
+  - Extraction results may differ slightly for some pages
+- Update @modelcontextprotocol/sdk from 1.27.1 to 1.29.0 (#121)
+- Update dev dependencies (@playwright/test 1.59.1, vitest 4.1.2) (#123)
+
+### Removed
+
+- Remove jsdom dependency (no longer needed with defuddle 0.15.0)
+
 ## [0.7.2] - 2026-03-18
 
 ### Changed
@@ -112,7 +126,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `open_in_new_tab` tool to open URLs in browser
 - Chrome browser support via AppleScript automation
 
-[Unreleased]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.6.0...v0.7.0
