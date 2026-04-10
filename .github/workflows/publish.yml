@@ -64,7 +64,7 @@ jobs:
       - run: npm ci
       - run: npm run test
       - run: npm run build
-      - run: npm publish --access public
+      - run: npm publish --provenance --access public
       - run: gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
