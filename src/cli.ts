@@ -1,13 +1,9 @@
 #!/usr/bin/env node
 
-import { createRequire } from "module";
 import { parseArgs } from "util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createMcpServer, McpServerOptions } from "./mcp.js";
+import { createMcpServer, McpServerOptions, packageVersion } from "./mcp.js";
 import type { Browser } from "./browser/browser.js";
-
-const require = createRequire(import.meta.url);
-const { version } = require("../package.json") as { version: string };
 
 type CliOptions = McpServerOptions & {
   help: boolean;
@@ -157,7 +153,7 @@ function parseCliArgs(args: string[]): CliOptions {
 async function main(): Promise<void> {
   const options = parseCliArgs(process.argv.slice(2));
   if (options.version) {
-    console.log(version);
+    console.log(await packageVersion());
     process.exit(0);
   }
   if (options.help) {
