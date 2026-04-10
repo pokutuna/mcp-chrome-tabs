@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Add `--provenance` flag to npm publish for OIDC trusted publishing
-- Remove `npm install -g npm@latest` from publish workflow to fix CI failure
+- Use Node.js 24 in publish workflow for npm trusted publishing support
+- Add `--provenance` flag to npm publish
+- Remove `npm install -g npm@latest` from publish workflow
 
 ## [0.8.0] - 2026-04-10
 

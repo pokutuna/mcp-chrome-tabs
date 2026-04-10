@@ -59,7 +59,7 @@ jobs:
           echo "Found CHANGELOG entry for version ${VERSION}"
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
       - run: npm ci
       - run: npm run test
