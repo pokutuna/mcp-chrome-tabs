@@ -66,7 +66,7 @@ async function getTab(
   }
 }
 
-async function packageVersion(): Promise<string> {
+export async function packageVersion(): Promise<string> {
   const packageJsonText = await readFile(
     join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
     "utf8"
