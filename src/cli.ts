@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
+import { createRequire } from "module";
 import { parseArgs } from "util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createMcpServer, McpServerOptions } from "./mcp.js";
 import type { Browser } from "./browser/browser.js";
 
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as { version: string };
+
 type CliOptions = McpServerOptions & {
   help: boolean;
+  version: boolean;
 };
 
 function showHelp(): void {
@@ -46,6 +51,7 @@ BROWSER OPTIONS:
 
 OTHER OPTIONS:
   --help                      Show this help message
+  --version                   Show version number
 
 
 REQUIREMENTS:
@@ -100,6 +106,10 @@ function parseCliArgs(args: string[]): CliOptions {
         type: "boolean",
         default: false,
       },
+      version: {
+        type: "boolean",
+        default: false,
+      },
     },
     allowPositionals: false,
     tokens: true,
@@ -139,12 +149,17 @@ function parseCliArgs(args: string[]): CliOptions {
       1000
     ),
     help: values.help,
+    version: values.version,
   };
   return parsed;
 }
 
 async function main(): Promise<void> {
   const options = parseCliArgs(process.argv.slice(2));
+  if (options.version) {
+    console.log(version);
+    process.exit(0);
+  }
   if (options.help) {
     showHelp();
     process.exit(0);
