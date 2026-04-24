@@ -68,8 +68,11 @@ jobs:
         # Launch Chrome and run progressively-deeper AppleScript to isolate
         # which command hangs (TCC vs window enumeration vs JS execution).
         # macOS has no `timeout`; use AppleScript's `with timeout` instead.
+        # `-a` without `-g` brings Chrome to front; pass a URL so Chrome opens
+        # a window (CI runners without a logged-in GUI may otherwise launch
+        # Chrome with no windows, making window-querying AppleEvents hang).
         run: |
-          open -ga "Google Chrome"
+          open -a "Google Chrome" "https://example.com"
           sleep 5
           set +e
           probe() {
