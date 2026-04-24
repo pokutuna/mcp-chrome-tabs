@@ -41,6 +41,7 @@ jobs:
         # actions/runner-images does for Safari/Finder/SystemEvents. We specify
         # column names explicitly since the `access` schema varies across macOS
         # versions (macOS 14+ added pid, pid_version, boot_uuid, last_reminded).
+        # tccd caches rows at startup, so we must restart it after INSERT.
         run: |
           USER_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
           SYS_DB="/Library/Application Support/com.apple.TCC/TCC.db"
@@ -57,4 +58,17 @@ jobs:
           echo "inserted rows:"
           sqlite3 "$USER_DB" "SELECT service,client,indirect_object_identifier,auth_value FROM access WHERE indirect_object_identifier='com.google.Chrome';"
           sudo sqlite3 "$SYS_DB" "SELECT service,client,indirect_object_identifier,auth_value FROM access WHERE indirect_object_identifier='com.google.Chrome';"
+          echo "restarting tccd to reload cache:"
+          sudo killall tccd || true
+          killall -u "$USER" tccd || true
+          sleep 2
+      - name: Probe osascript -> Chrome before running tests
+        # Launch Chrome and run a minimal AppleScript to surface TCC/permission
+        # issues (timeout vs -1743 vs success) before Playwright tests fire.
+        run: |
+          open -ga "Google Chrome"
+          sleep 3
+          set +e
+          osascript -e 'tell application "Google Chrome" to return name' 2>&1
+          echo "osascript exit: $?"
       - run: npm run test:e2e
