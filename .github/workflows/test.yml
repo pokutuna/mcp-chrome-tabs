@@ -75,8 +75,17 @@ jobs:
           # Register Chrome with LaunchServices before invoking by name.
           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
             -f "/Applications/Google Chrome.app" || true
-          open -a "/Applications/Google Chrome.app" "https://example.com"
-          sleep 5
+          # Launch Chrome directly in background with a URL to force window
+          # creation. 'open -a' alone starts Chrome without windows on
+          # headless-ish runners.
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+            --no-first-run --no-default-browser-check \
+            "https://example.com" >/tmp/chrome.log 2>&1 &
+          sleep 6
+          echo "--- /tmp/chrome.log tail:"
+          tail -30 /tmp/chrome.log || true
+          echo "--- all Chrome procs:"
+          ps aux | grep -i '[C]hrome' | head -20
           set +e
           probe() {
             local label="$1"; shift
