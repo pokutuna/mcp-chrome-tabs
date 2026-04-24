@@ -65,12 +65,33 @@ jobs:
           launchctl kickstart -k "gui/$(id -u)/com.apple.tccd" || true
           sleep 2
       - name: Probe osascript -> Chrome before running tests
-        # Launch Chrome and run a minimal AppleScript to surface TCC/permission
-        # issues (timeout vs -1743 vs success) before Playwright tests fire.
+        # Launch Chrome and run progressively-deeper AppleScript to isolate
+        # which command hangs (TCC vs window enumeration vs JS execution).
         run: |
           open -ga "Google Chrome"
-          sleep 3
+          sleep 5
           set +e
-          osascript -e 'tell application "Google Chrome" to return name' 2>&1
-          echo "osascript exit: $?"
+          echo "--- probe 1: return name"
+          timeout 5 osascript -e 'tell application "Google Chrome" to return name' 2>&1
+          echo "exit: $?"
+          echo "--- probe 2: count windows"
+          timeout 5 osascript -e 'tell application "Google Chrome" to return count of windows' 2>&1
+          echo "exit: $?"
+          echo "--- probe 3: id of front window"
+          timeout 5 osascript -e 'tell application "Google Chrome" to return id of front window' 2>&1
+          echo "exit: $?"
+          echo "--- probe 4: every window id"
+          timeout 5 osascript -e 'tell application "Google Chrome"
+            set out to ""
+            repeat with w in (every window)
+              set out to out & (id of w) & " "
+            end repeat
+            return out
+          end tell' 2>&1
+          echo "exit: $?"
+          echo "--- probe 5: execute javascript"
+          timeout 5 osascript -e 'tell application "Google Chrome" to tell active tab of front window to execute javascript "1+1"' 2>&1
+          echo "exit: $?"
+          echo "--- ps aux for Chrome"
+          ps aux | grep -i '[C]hrome' | head -20
       - run: npm run test:e2e
