@@ -72,7 +72,10 @@ jobs:
         # a window (CI runners without a logged-in GUI may otherwise launch
         # Chrome with no windows, making window-querying AppleEvents hang).
         run: |
-          open -a "Google Chrome" "https://example.com"
+          # Register Chrome with LaunchServices before invoking by name.
+          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+            -f "/Applications/Google Chrome.app" || true
+          open -a "/Applications/Google Chrome.app" "https://example.com"
           sleep 5
           set +e
           probe() {
