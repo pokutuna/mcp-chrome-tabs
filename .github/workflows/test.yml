@@ -20,3 +20,41 @@ jobs:
       - run: npm ci
       - run: npm run test
       - run: npm run build
+
+  e2e:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci
+      - name: Install Playwright Chrome channel
+        # E2E tests drive a real Google Chrome (channel: "chrome") via Playwright
+        # because the Chrome browser implementation relies on AppleScript/JXA
+        # which requires the real Chrome bundle (com.google.Chrome).
+        run: npx playwright install chrome
+      - name: Grant osascript AppleEvents permission for Google Chrome
+        # GitHub-hosted macOS runners have SIP disabled, so we can pre-populate
+        # TCC.db to authorize osascript -> Google Chrome. This mirrors what
+        # actions/runner-images does for Safari/Finder/SystemEvents. We specify
+        # column names explicitly since the `access` schema varies across macOS
+        # versions (macOS 14+ added pid, pid_version, boot_uuid, last_reminded).
+        run: |
+          USER_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+          SYS_DB="/Library/Application Support/com.apple.TCC/TCC.db"
+          echo "schema:"
+          sqlite3 "$USER_DB" ".schema access"
+          TS=$(date +%s)
+          SQL="INSERT OR IGNORE INTO access \
+            (service, client, client_type, auth_value, auth_reason, auth_version, \
+             indirect_object_identifier_type, indirect_object_identifier, last_modified) \
+            VALUES \
+            ('kTCCServiceAppleEvents', '/usr/bin/osascript', 1, 2, 4, 1, 0, 'com.google.Chrome', ${TS});"
+          sqlite3 "$USER_DB" "$SQL"
+          sudo sqlite3 "$SYS_DB" "$SQL"
+          echo "inserted rows:"
+          sqlite3 "$USER_DB" "SELECT service,client,indirect_object_identifier,auth_value FROM access WHERE indirect_object_identifier='com.google.Chrome';"
+          sudo sqlite3 "$SYS_DB" "SELECT service,client,indirect_object_identifier,auth_value FROM access WHERE indirect_object_identifier='com.google.Chrome';"
+      - run: npm run test:e2e
