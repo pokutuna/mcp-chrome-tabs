@@ -38,29 +38,31 @@ jobs:
       - name: Grant osascript AppleEvents permission for Google Chrome
         # GitHub-hosted macOS runners have SIP disabled, so we can pre-populate
         # TCC.db to authorize osascript -> Google Chrome. This mirrors what
-        # actions/runner-images does for Safari/Finder/SystemEvents. We specify
-        # column names explicitly since the `access` schema varies across macOS
-        # versions (macOS 14+ added pid, pid_version, boot_uuid, last_reminded).
-        # tccd caches rows at startup, so we must restart it after INSERT.
+        # actions/runner-images does for Safari/Finder/SystemEvents in
+        # configure-tccdb-macos.sh. macOS 15's `access` table has 17 columns;
+        # we INSERT positionally to match the schema exactly. `boot_uuid` and
+        # `last_reminded` are NOT NULL so they must be supplied. `csreq` is NULL
+        # for Apple-signed binaries like /usr/bin/osascript. tccd caches rows,
+        # so we must restart it via launchctl kickstart after INSERT.
         run: |
           USER_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
           SYS_DB="/Library/Application Support/com.apple.TCC/TCC.db"
           echo "schema:"
           sqlite3 "$USER_DB" ".schema access"
-          TS=$(date +%s)
-          SQL="INSERT OR IGNORE INTO access \
-            (service, client, client_type, auth_value, auth_reason, auth_version, \
-             indirect_object_identifier_type, indirect_object_identifier, last_modified) \
-            VALUES \
-            ('kTCCServiceAppleEvents', '/usr/bin/osascript', 1, 2, 4, 1, 0, 'com.google.Chrome', ${TS});"
-          sqlite3 "$USER_DB" "$SQL"
+          SQL="INSERT OR REPLACE INTO access VALUES(
+            'kTCCServiceAppleEvents','/usr/bin/osascript',1,2,0,1,
+            NULL,NULL,0,'com.google.Chrome',
+            NULL,NULL,strftime('%s','now'),
+            NULL,NULL,'UNUSED',strftime('%s','now'));"
+          sqlite3     "$USER_DB" "$SQL"
           sudo sqlite3 "$SYS_DB" "$SQL"
-          echo "inserted rows:"
-          sqlite3 "$USER_DB" "SELECT service,client,indirect_object_identifier,auth_value FROM access WHERE indirect_object_identifier='com.google.Chrome';"
-          sudo sqlite3 "$SYS_DB" "SELECT service,client,indirect_object_identifier,auth_value FROM access WHERE indirect_object_identifier='com.google.Chrome';"
-          echo "restarting tccd to reload cache:"
-          sudo killall tccd || true
-          killall -u "$USER" tccd || true
+          echo "inserted rows (user):"
+          sqlite3     "$USER_DB" "SELECT service,client,indirect_object_identifier,auth_value,auth_reason FROM access WHERE indirect_object_identifier='com.google.Chrome';"
+          echo "inserted rows (system):"
+          sudo sqlite3 "$SYS_DB" "SELECT service,client,indirect_object_identifier,auth_value,auth_reason FROM access WHERE indirect_object_identifier='com.google.Chrome';"
+          echo "kickstarting tccd:"
+          sudo launchctl kickstart -k system/com.apple.tccd || true
+          launchctl kickstart -k "gui/$(id -u)/com.apple.tccd" || true
           sleep 2
       - name: Probe osascript -> Chrome before running tests
         # Launch Chrome and run a minimal AppleScript to surface TCC/permission
