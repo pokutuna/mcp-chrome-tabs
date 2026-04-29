@@ -13,6 +13,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "allowJs": true,
+    "types": ["node"],
+    "rootDir": "./src",
     "outDir": "./dist"
   },
   "include": ["src/**/*"],
