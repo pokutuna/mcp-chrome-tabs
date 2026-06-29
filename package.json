@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "defuddle": "^0.18.1",
+    "defuddle": "^0.19.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
