@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-07-16
+
+### Added
+
+- `--version` CLI option to show the package version (#124)
+
+### Changed
+
+- Update defuddle from 0.15.0 to 0.19.1 (extraction results may differ slightly for some pages)
+- Update zod from 4.3.6 to 4.4.3
+
 ## [0.8.2] - 2026-04-10
 
 ### Fixed
@@ -134,7 +145,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `open_in_new_tab` tool to open URLs in browser
 - Chrome browser support via AppleScript automation
 
-[Unreleased]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.7.2...v0.8.0
