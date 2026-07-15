@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__write_memory",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__find_symbol",
+      "mcp__serena__replace_symbol_body",
+      "mcp__serena__replace_regex",
+      "Bash(gh pr review:*)",
+      "Bash(gh api:*)",
+      "mcp__serena__think_about_collected_information",
+      "mcp__chrome-tabs__list_tabs",
+      "mcp__chrome-tabs__read_tab_content"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "chrome-tabs"
+  ]
+}
