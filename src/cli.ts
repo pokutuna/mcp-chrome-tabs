@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { parseArgs } from "util";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 import { createMcpServer, McpServerOptions, packageVersion } from "./mcp.js";
 import type { Browser } from "./browser/browser.js";
 

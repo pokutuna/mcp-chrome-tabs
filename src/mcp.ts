@@ -1,7 +1,4 @@
-import {
-  McpServer,
-  ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import {
   Browser,
@@ -113,7 +110,7 @@ export async function createMcpServer(
       title: "List Tabs",
       description:
         "List all open tabs in the user's browser with their titles and tab references.",
-      inputSchema: {
+      inputSchema: z.object({
         includeUrl: z
           .boolean()
           .optional()
@@ -121,7 +118,7 @@ export async function createMcpServer(
           .describe(
             "Include URLs in the output. Enable only when you need to reference specific URLs. (default: false, hostnames always included)"
           ),
-      },
+      }),
     },
     async (args) => {
       const { includeUrl } = args;
@@ -143,7 +140,7 @@ export async function createMcpServer(
       title: "Read Tab Content",
       description:
         "Get readable content from a tab in the user's browser. Provide ID (from list_tabs output) to read a specific tab, or omit for the active tab.",
-      inputSchema: {
+      inputSchema: z.object({
         id: z
           .string()
           .optional()
@@ -159,7 +156,7 @@ export async function createMcpServer(
           .describe(
             "Starting character position for content extraction (default: 0)"
           ),
-      },
+      }),
     },
     async (args) => {
       const { id, startIndex } = args;
@@ -185,9 +182,9 @@ export async function createMcpServer(
       title: "Open in New Tab",
       description:
         "Open a URL in a new tab to present content or enable user interaction with webpages",
-      inputSchema: {
+      inputSchema: z.object({
         url: z.string().url().describe("URL to open in the browser"),
-      },
+      }),
     },
     async (args) => {
       const { url } = args;
