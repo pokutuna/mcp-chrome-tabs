@@ -271,6 +271,7 @@ export async function createMcpServer(
 
   if (options.checkInterval > 0) {
     let lastHash: string = hashTabList(await listTabs(options));
+    let stopped = false;
     const check = async () => {
       try {
         const hash = hashTabList(await listTabs(options));
@@ -281,10 +282,19 @@ export async function createMcpServer(
       } catch (error) {
         console.error("Error during periodic tab list update:", error);
       }
+      // The connection may have closed while the AppleScript call was in flight
+      if (stopped) return;
       // Use setTimeout instead of setInterval to avoid overlapping calls
-      setTimeout(check, options.checkInterval);
+      timer = setTimeout(check, options.checkInterval);
     };
-    check();
+    // Wait one interval, otherwise the first tick polls right after the snapshot above
+    let timer = setTimeout(check, options.checkInterval);
+    // serveStdio builds one instance per connection, so the poller has to stop
+    // with the instance
+    server.server.onclose = () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
   }
 
   return server;
