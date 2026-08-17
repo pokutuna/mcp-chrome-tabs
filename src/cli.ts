@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { parseArgs } from "util";
-import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { createMcpServer, McpServerOptions, packageVersion } from "./mcp.js";
 import type { Browser } from "./browser/browser.js";
 
@@ -160,13 +160,12 @@ async function main(): Promise<void> {
     showHelp();
     process.exit(0);
   }
-  const server = await createMcpServer(options);
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // serveStdio pins one instance per connection and selects the protocol era
+  // from the opening exchange, serving both 2025-era and 2026-07-28 clients.
+  const handle = serveStdio(() => createMcpServer(options));
 
   const shutdown = async () => {
-    await transport.close();
-    await server.close();
+    await handle.close();
     process.exit(0);
   };
   process.on("SIGINT", shutdown);
