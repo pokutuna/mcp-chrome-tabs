@@ -160,8 +160,8 @@ async function main(): Promise<void> {
     showHelp();
     process.exit(0);
   }
-  // serveStdio pins one instance per connection and selects the protocol era
-  // from the opening exchange, serving both 2025-era and 2026-07-28 clients.
+  // serveStdio picks the protocol era from the opening exchange, so the same
+  // factory serves both 2025-era and 2026-07-28 clients
   const handle = serveStdio(() => createMcpServer(options));
 
   const shutdown = async () => {
@@ -170,6 +170,9 @@ async function main(): Promise<void> {
   };
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
+  // StdioServerTransport only watches stdin "data" and "error", so EOF never
+  // reaches the server on its own
+  process.stdin.on("end", shutdown);
 }
 
 await main().catch(console.error);
