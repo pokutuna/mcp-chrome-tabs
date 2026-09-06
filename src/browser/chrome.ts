@@ -9,10 +9,12 @@ and a headless Chrome launched by Playwright MCP), AppleScript's
 `tell application "Google Chrome"` resolves to the newest-launched process,
 which may not be the user's foreground Chrome.
 
-JXA's `Application("Google Chrome")` resolves to the oldest-launched process
-instead, which reliably points to the user's primary Chrome in the common case.
-There is no public API to target a specific PID without ObjC bridging, so we
-rely on this JXA behavior documented at https://www.deanishe.net/snippet/multiple-app-instances/
+JXA has been observed to resolve `Application("Google Chrome")` to the
+oldest-launched process, which usually points to the user's primary Chrome.
+This is a startup-order heuristic: if the headless process starts first, it is
+selected instead. There is no public API to target a specific PID without ObjC
+bridging, so we rely on this behavior documented at
+https://www.deanishe.net/snippet/multiple-app-instances/
 */
 
 function jsonStringLiteral(value: string): string {
@@ -51,8 +53,8 @@ async function getPageContent(
     const target = ${tab ? jsonStringLiteral(JSON.stringify(tab)) : "null"};
 
     // Chrome's "execute javascript" may hang on suspended tabs. JXA cannot
-    // express AppleScript's "with timeout" block, so we rely on osascript's
-    // outer process timeout and the retry wrapper.
+    // express AppleScript's "with timeout" block, so use a short process
+    // timeout and do not retry this operation.
     let targetTab;
     if (target) {
       const t = JSON.parse(target);
@@ -77,7 +79,10 @@ async function getPageContent(
     JSON.stringify(result);
   `;
 
-  const scriptResult = await executeJXA(script);
+  const scriptResult = await executeJXA(script, {
+    timeout: 3 * 1000,
+    maxRetries: 0,
+  });
   const parsed = JSON.parse(scriptResult) as TabContent;
   return parsed;
 }

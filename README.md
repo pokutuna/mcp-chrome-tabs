@@ -16,11 +16,11 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 ## Requirements
 
 > [!IMPORTANT]  
-> **macOS only** - This MCP server uses AppleScript and only works on macOS.
+> **macOS only** - This MCP server uses Apple Events (JXA/AppleScript) and only works on macOS.
 
 - **Node.js** 20 or newer
 - **MCP Client** such as Claude Desktop, Claude Code, or any MCP-compatible client
-- **macOS** only (uses AppleScript for browser automation)
+- **macOS** only (uses Apple Events via JXA/AppleScript for browser automation)
 
 ## Getting Started
 
@@ -30,6 +30,8 @@ First, enable "Allow JavaScript from Apple Events" in Chrome:
 - (ja) **表示** > **開発 / 管理** > **Apple Events からの JavaScript を許可**
 
 When you first use the MCP server, macOS will prompt you to grant AppleScript automation permission to your MCP client (e.g., Claude Desktop, Claude Code). Click **OK** to allow access to Chrome. If you accidentally dismissed the dialog, you can enable it in **System Settings** > **Privacy & Security** > **Automation**.
+
+When multiple Google Chrome processes exist, JXA generally selects the oldest process, but this is not a guaranteed process-selection API. Start your normal Chrome before starting other Chrome instances when process identity matters.
 
 Standard config works in most MCP clients (e.g., `.claude.json`, `.mcp.json`):
 
@@ -67,18 +69,22 @@ You can also install this as a Claude Code plugin:
 The server accepts optional command line arguments for configuration:
 
 **Content Extraction Options**
+
 - `--max-content-chars` - Maximum content characters per single read (default: 20000)
 - `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 20000)
 - `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
 
 **Resource Options**
+
 - `--check-interval` - Interval in milliseconds to check for tab changes and send listChanged notifications (default: 0 disabled, set to 3000 for 3 seconds)
 
 **Browser Options**
+
 - `--application-name` - Application name to control (default: "Google Chrome")
 - `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
 
 **Other Options**
+
 - `--help` - Show help message with all available options
 
 ### Resource Subscription (Optional)
