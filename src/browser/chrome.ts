@@ -17,13 +17,15 @@ bridging, so we rely on this behavior documented at
 https://www.deanishe.net/snippet/multiple-app-instances/
 */
 
-function jsonStringLiteral(value: string): string {
+// Embeds a value into the JXA source as a JSON literal, so that user input
+// cannot break out of the surrounding script syntax.
+function jsonLiteral(value: unknown): string {
   return JSON.stringify(value);
 }
 
 async function getChromeTabList(applicationName: string): Promise<Tab[]> {
   const script = `
-    const app = Application(${jsonStringLiteral(applicationName)});
+    const app = Application(${jsonLiteral(applicationName)});
     const out = [];
     for (const w of app.windows()) {
       const windowId = String(w.id());
@@ -49,17 +51,16 @@ async function getPageContent(
   tab?: TabRef | null
 ): Promise<TabContent> {
   const script = `
-    const app = Application(${jsonStringLiteral(applicationName)});
-    const target = ${tab ? jsonStringLiteral(JSON.stringify(tab)) : "null"};
+    const app = Application(${jsonLiteral(applicationName)});
+    const target = ${tab ? jsonLiteral(tab) : "null"};
 
     // Chrome's "execute javascript" may hang on suspended tabs. JXA cannot
     // express AppleScript's "with timeout" block, so use a short process
     // timeout and do not retry this operation.
     let targetTab;
     if (target) {
-      const t = JSON.parse(target);
-      const win = app.windows.byId(Number(t.windowId));
-      targetTab = win.tabs.byId(Number(t.tabId));
+      const win = app.windows.byId(Number(target.windowId));
+      targetTab = win.tabs.byId(Number(target.tabId));
     } else {
       for (const w of app.windows()) {
         const t = w.activeTab();
@@ -89,9 +90,9 @@ async function getPageContent(
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
   const script = `
-    const app = Application(${jsonStringLiteral(applicationName)});
+    const app = Application(${jsonLiteral(applicationName)});
     const win = app.windows[0];
-    const newTab = app.Tab({ url: ${jsonStringLiteral(url)} });
+    const newTab = app.Tab({ url: ${jsonLiteral(url)} });
     win.tabs.push(newTab);
     JSON.stringify({
       windowId: String(win.id()),

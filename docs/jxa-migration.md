@@ -38,7 +38,11 @@ Chrome では `app.windows.byId(Number(windowId))` と `win.tabs.byId(Number(tab
 
 Safari の JXA で `do JavaScript` を呼ぶ形式（たとえば `app.doJavaScript(script, { in: tab })`）は、sdef に基づく候補であり、実ブラウザーでの確認が必要です。
 
-JXA には AppleScript の `with timeout` に相当する構文がありません。通常の JXA 実行は `osascript.ts` の `execFile` timeout（既定 5 秒）とリトライで保護します。Chrome のページ内容取得は suspended tab で停止する可能性があるため、timeout を 3 秒、`maxRetries` を 0 とし、同じ Apple Event を再送しません。timeout になると `osascript` プロセスを終了し、呼び出し元へエラーを返します。Safari と Arc を移行する場合は、ブラウザーごとの停止条件を確認してから設定を決めます。
+JXA には AppleScript の `with timeout` に相当する構文がありません。通常の JXA 実行は `osascript.ts` の `execFile` timeout（既定 5 秒）とリトライで保護します。Chrome のページ内容取得は suspended tab で停止する可能性があるため、timeout を 3 秒、`maxRetries` を 0 とし、同じ Apple Event を再送しません。timeout になると `osascript` プロセスを終了し、呼び出し元へエラーを返します。
+
+AppleScript の `with timeout` は Apple Event の応答待ちだけを制限しますが、`execFile` の timeout は `osascript` プロセス全体を制限します。この差により、スクリプトの起動やタブの走査も 3 秒の予算に含まれます。20 タブの実測では、`osascript` の起動が 40〜50ms、正常なタブの `execute javascript` が 124〜225ms でした。所要時間は DOM のサイズにほとんど依存せず、5MB の Gmail でも 216ms です。一方 suspended tab は 10 秒でも応答しません。正常応答とハングの二分が明確で中間の分布がないため、3 秒はどちらの側にも十分な余裕があります。timeout を延ばしても救えるタブはなく、ハング時の待ち時間が伸びるだけです。
+
+Safari と Arc を移行する場合は、ブラウザーごとの停止条件を確認してから設定を決めます。
 
 JXA の実行エラーと JSON の解析エラーは TypeScript 側で処理します。ブラウザー固有の分岐が増える場合は、JXA 内の `try` / `catch` でブラウザー API のエラーを構造化して返す方法も検討できます。
 
