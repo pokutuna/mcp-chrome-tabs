@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { formatTabContent } from "../src/view.js";
-import type { TabContent } from "../src/browser/browser.js";
+import { formatListForCli, formatTabContent } from "../src/view.js";
+import type { Tab, TabContent } from "../src/browser/browser.js";
 
 describe("formatTabContent", () => {
   const mockTab: TabContent = {
@@ -168,5 +168,63 @@ describe("formatTabContent", () => {
       expect(collectedContent).toBe(longContent);
       expect(iterations).toBeLessThan(maxIterations); // Ensure we didn't hit safety guard
     });
+  });
+});
+
+describe("formatListForCli", () => {
+  const tabs: Tab[] = [
+    {
+      windowId: "1001",
+      tabId: "2001",
+      title: "Example",
+      url: "https://example.com/page",
+    },
+    {
+      windowId: "1001",
+      tabId: "2002",
+      title: "テスト",
+      url: "https://test.com:8080/a",
+    },
+  ];
+
+  it("shows index, ID, title and domain per row", () => {
+    const lines = formatListForCli(tabs).split("\n");
+
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain("[1]");
+    expect(lines[0]).toContain("ID:1001:2001");
+    expect(lines[0]).toContain("Example");
+    expect(lines[0]).toContain("example.com");
+    expect(lines[1]).toContain("[2]");
+    expect(lines[1]).toContain("test.com:8080");
+  });
+
+  it("shows the full URL instead of the domain when includeUrl is set", () => {
+    const lines = formatListForCli(tabs, true).split("\n");
+
+    expect(lines[0]).toContain("https://example.com/page");
+  });
+
+  it("aligns the domain column across wide (CJK) titles", () => {
+    const lines = formatListForCli(tabs).split("\n");
+    const width = (text: string) =>
+      [...text].reduce(
+        (sum, char) =>
+          sum +
+          (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(char)
+            ? 2
+            : 1),
+        0
+      );
+
+    const starts = lines.map((line) => {
+      const domain = line.trimEnd().split(/\s+/).pop()!;
+      return width(line.slice(0, line.lastIndexOf(domain)));
+    });
+    expect(starts[0]).toBe(starts[1]);
+  });
+
+  it("reports when no tabs are open", () => {
+    expect(formatListForCli([])).toBe("No open tabs.");
   });
 });

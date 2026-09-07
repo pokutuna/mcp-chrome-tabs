@@ -71,12 +71,54 @@ export async function executeListTabs(
   return view.formatList(tabs, includeUrl);
 }
 
+// The CLI renders a human-readable table; the MCP tool keeps its Markdown list
+export async function executeListTabsForCli(
+  options: McpServerOptions,
+  includeUrl: boolean = false
+): Promise<string> {
+  const tabs = await listTabs(options);
+  return view.formatListForCli(tabs, includeUrl);
+}
+
 export async function executeReadTabContent(
   options: McpServerOptions,
   id?: string,
   startIndex: number = 0
 ): Promise<string> {
-  const tab = await getTab(id ? view.parseTabRef(id) : null, options);
+  // An unparsable id must not fall through to the active tab
+  let tabRef: TabRef | null = null;
+  if (id) {
+    tabRef = view.parseTabRef(id);
+    if (!tabRef) {
+      throw new Error(
+        `Invalid tab ID: "${id}". Expected ID:<windowId>:<tabId>.`
+      );
+    }
+  }
+  const tab = await getTab(tabRef, options);
+  return view.formatTabContent(tab, startIndex, options.maxContentChars);
+}
+
+// Resolves against a freshly fetched list, so the index means the same thing it
+// would in a `list` run right now -- not in whatever listing the user last saw.
+export async function executeReadTabContentByIndex(
+  options: McpServerOptions,
+  index: number,
+  startIndex: number = 0
+): Promise<string> {
+  const tabs = await listTabs(options);
+  const target = tabs[index - 1];
+  if (!target) {
+    throw new Error(
+      tabs.length === 0
+        ? "No open tabs."
+        : `No tab at index ${index}. Currently 1-${tabs.length}; run "list" for the current numbering.`
+    );
+  }
+  const tab = await getTab(
+    { windowId: target.windowId, tabId: target.tabId },
+    options
+  );
   return view.formatTabContent(tab, startIndex, options.maxContentChars);
 }
 

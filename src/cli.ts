@@ -3,12 +3,12 @@
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import {
   createMcpServer,
-  executeListTabs,
+  executeListTabsForCli,
   executeReadTabContent,
+  executeReadTabContentByIndex,
   packageVersion,
 } from "./mcp.js";
 import { parseCliArgs } from "./cli-options.js";
-import { parseTabRef } from "./view.js";
 
 function showHelp(): void {
   console.log(
@@ -18,17 +18,27 @@ MCP Chrome Tabs Server
 USAGE:
   mcp-chrome-tabs [OPTIONS]
   mcp-chrome-tabs list [--include-url] [OPTIONS]
-  mcp-chrome-tabs get [ID] [--start-index=<index>] [OPTIONS]
+  mcp-chrome-tabs get [ID | -n <index>] [--start-index=<chars>] [OPTIONS]
 
 COMMANDS:
-  list                        List open tabs
+  list                        List open tabs as: [INDEX] ID TITLE DOMAIN
+                              INDEX numbers this listing only and shifts when
+                              windows are reordered or tabs change; pass the ID
+                              to refer to a tab reliably.
   get [ID]                    Get readable content from a tab
                               (default: active tab)
+                              Takes an ID from list, or -n <index>.
 
 COMMAND OPTIONS:
-  --include-url               Include full URLs in list output
+  --include-url               Show the full URL instead of the domain
+                              in list output
 
-  --start-index=<index>       Start reading content at this character index
+  -n, --index=<index>         Read the tab at this INDEX from list
+                              Resolved against the tab list at the time
+                              get runs, so it can shift; prefer the ID
+                              when it matters.
+
+  --start-index=<chars>       Start reading content at this character index
                               (default: 0)
 
 CONTENT EXTRACTION OPTIONS:
@@ -95,23 +105,18 @@ async function main(): Promise<void> {
   }
 
   if (cli.command.name === "list") {
-    console.log(await executeListTabs(cli.server, cli.command.includeUrl));
+    console.log(
+      await executeListTabsForCli(cli.server, cli.command.includeUrl)
+    );
     return;
   }
 
   if (cli.command.name === "get") {
-    const tabRef = cli.command.id ? parseTabRef(cli.command.id) : null;
-    if (cli.command.id && !tabRef) {
-      throw new Error(
-        `Invalid tab ID: "${cli.command.id}". Expected ID:<windowId>:<tabId>.`
-      );
-    }
+    const { id, index, startIndex } = cli.command;
     console.log(
-      await executeReadTabContent(
-        cli.server,
-        cli.command.id,
-        cli.command.startIndex
-      )
+      index !== undefined
+        ? await executeReadTabContentByIndex(cli.server, index, startIndex)
+        : await executeReadTabContent(cli.server, id, startIndex)
     );
     return;
   }

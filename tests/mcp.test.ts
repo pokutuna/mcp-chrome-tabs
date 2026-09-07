@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { createMcpServer, type McpServerOptions } from "../src/mcp.js";
+import {
+  createMcpServer,
+  executeReadTabContent,
+  executeReadTabContentByIndex,
+  type McpServerOptions,
+} from "../src/mcp.js";
 import type {
   Tab,
   TabContent,
@@ -510,5 +515,86 @@ describe("MCP Server", () => {
         expect(githubTab).toBeUndefined();
       });
     });
+  });
+});
+
+describe("executeReadTabContent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
+      mockPageContent
+    );
+  });
+
+  it("rejects a malformed tab ID instead of reading the active tab", async () => {
+    await expect(
+      executeReadTabContent(defaultTestOptions, "not-a-tab-ref")
+    ).rejects.toThrow('Invalid tab ID: "not-a-tab-ref"');
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("reads the active tab when no ID is given", async () => {
+    await executeReadTabContent(defaultTestOptions);
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      null
+    );
+  });
+
+  it("passes a parsed tab ref through for a well-formed ID", async () => {
+    await executeReadTabContent(defaultTestOptions, "ID:1001:2001");
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1001", tabId: "2001" }
+    );
+  });
+});
+
+describe("executeReadTabContentByIndex", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
+    vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
+      mockPageContent
+    );
+  });
+
+  it("resolves a 1-based index to that tab's ref", async () => {
+    await executeReadTabContentByIndex(defaultTestOptions, 3);
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1002", tabId: "2003" }
+    );
+  });
+
+  it("resolves against the filtered list, not the raw one", async () => {
+    // github.com is excluded, so index 2 is the third raw tab
+    await executeReadTabContentByIndex(
+      { ...defaultTestOptions, excludeHosts: ["github.com"] },
+      2
+    );
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1002", tabId: "2003" }
+    );
+  });
+
+  it("reports the valid range for an out-of-range index", async () => {
+    await expect(
+      executeReadTabContentByIndex(defaultTestOptions, 99)
+    ).rejects.toThrow("No tab at index 99. Currently 1-3");
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("reports when there are no tabs at all", async () => {
+    vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue([]);
+
+    await expect(
+      executeReadTabContentByIndex(defaultTestOptions, 1)
+    ).rejects.toThrow("No open tabs.");
   });
 });

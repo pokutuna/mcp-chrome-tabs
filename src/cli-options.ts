@@ -5,7 +5,7 @@ import type { McpServerOptions } from "./mcp.js";
 export type CliCommand =
   | { name: "serve" }
   | { name: "list"; includeUrl: boolean }
-  | { name: "get"; id?: string; startIndex: number };
+  | { name: "get"; id?: string; index?: number; startIndex: number };
 
 export type CliOptions = {
   server: McpServerOptions;
@@ -69,6 +69,10 @@ export function parseCliArgs(args: string[]): CliOptions {
         type: "string",
         default: "0",
       },
+      index: {
+        type: "string",
+        short: "n",
+      },
       help: {
         type: "boolean",
         short: "h",
@@ -113,9 +117,23 @@ export function parseCliArgs(args: string[]): CliOptions {
     if (commandArgs.length > 1) {
       throw new Error("The get command accepts at most one tab ID.");
     }
+    const indexValue = values.index;
+    let index: number | undefined;
+    if (indexValue !== undefined) {
+      if (commandArgs[0] !== undefined) {
+        throw new Error("Pass either a tab ID or --index, not both.");
+      }
+      index = Number(indexValue);
+      if (!Number.isInteger(index) || index < 1) {
+        throw new Error(
+          `Invalid --index option: "${indexValue}". Expected a positive integer.`
+        );
+      }
+    }
     command = {
       name: "get",
       id: commandArgs[0],
+      index,
       startIndex: parseIntWithDefault(values["start-index"], 0, 0),
     };
   } else {

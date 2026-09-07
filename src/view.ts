@@ -39,6 +39,60 @@ export function formatListItem(tab: Tab, includeUrl: boolean = false): string {
   }
 }
 
+// CJK, emoji and other wide glyphs occupy two terminal cells but count as one
+// or two UTF-16 units, so column padding has to measure display width.
+function displayWidth(text: string): number {
+  let width = 0;
+  for (const char of text) {
+    const cp = char.codePointAt(0)!;
+    if (cp === 0x200d || (cp >= 0xfe00 && cp <= 0xfe0f)) continue; // ZWJ, VS
+    width +=
+      /\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}|\p{Extended_Pictographic}|[\u3000-\u303f\uff00-\uff60\uffe0-\uffe6]/u.test(
+        char
+      )
+        ? 2
+        : 1;
+  }
+  return width;
+}
+
+function padCell(text: string, width: number): string {
+  return text + " ".repeat(Math.max(0, width - displayWidth(text)));
+}
+
+// Index is ephemeral: it numbers the rows of this one listing and shifts as
+// windows are reordered or tabs open and close. ID is the durable reference,
+// so both are always shown and `read` takes either.
+export function formatListForCli(
+  tabs: Tab[],
+  includeUrl: boolean = false
+): string {
+  if (tabs.length === 0) return "No open tabs.";
+
+  const rows = tabs.map((tab, i) => ({
+    index: `[${i + 1}]`,
+    id: formatTabRef(tab),
+    title: tab.title,
+    locus: includeUrl ? tab.url : getDomain(tab.url),
+  }));
+
+  const widest = (key: "index" | "id" | "title") =>
+    Math.max(...rows.map((r) => displayWidth(r[key])));
+  const [wIndex, wId, wTitle] = [
+    widest("index"),
+    widest("id"),
+    widest("title"),
+  ];
+
+  return rows
+    .map(
+      (r) =>
+        `${" ".repeat(wIndex - displayWidth(r.index))}${r.index}  ` +
+        `${padCell(r.id, wId)}  ${padCell(r.title, wTitle)}  ${r.locus}`
+    )
+    .join("\n");
+}
+
 type FrontMatter = { key: string; value: string | number | boolean };
 
 export function formatTabContent(
