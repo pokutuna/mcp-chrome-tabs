@@ -1,0 +1,131 @@
+import { parseArgs } from "util";
+import type { Browser } from "./browser/browser.js";
+import type { McpServerOptions } from "./mcp.js";
+
+export type CliCommand =
+  | { name: "serve" }
+  | { name: "list"; includeUrl: boolean }
+  | { name: "get"; id?: string; startIndex: number };
+
+export type CliOptions = {
+  server: McpServerOptions;
+  command: CliCommand;
+  help: boolean;
+  version: boolean;
+};
+
+function parseBrowserOption(browser: string): Browser {
+  if (browser === "" || browser === "chrome") return "chrome";
+  if (browser === "safari") return "safari";
+  if (browser === "arc") return "arc";
+  throw new Error(
+    `Invalid --experimental-browser option: "${browser}". Use "chrome", "safari", or "arc".`
+  );
+}
+
+function parseIntWithDefault(
+  value: string,
+  defaultValue: number,
+  minValue: number = 0
+): number {
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed) || parsed < minValue) return defaultValue;
+  return parsed;
+}
+
+export function parseCliArgs(args: string[]): CliOptions {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      "max-content-chars": {
+        type: "string",
+        default: "20000",
+      },
+      "extraction-timeout": {
+        type: "string",
+        default: "20000",
+      },
+      "check-interval": {
+        type: "string",
+        default: "0",
+      },
+      "exclude-hosts": {
+        type: "string",
+        default: "",
+      },
+      "application-name": {
+        type: "string",
+        default: "Google Chrome",
+      },
+      "experimental-browser": {
+        type: "string",
+        default: "",
+      },
+      "include-url": {
+        type: "boolean",
+        default: false,
+      },
+      "start-index": {
+        type: "string",
+        default: "0",
+      },
+      help: {
+        type: "boolean",
+        short: "h",
+        default: false,
+      },
+      version: {
+        type: "boolean",
+        short: "v",
+        default: false,
+      },
+    },
+    allowPositionals: true,
+    strict: true,
+  });
+
+  const server: McpServerOptions = {
+    applicationName: values["application-name"],
+    browser: parseBrowserOption(values["experimental-browser"]),
+    excludeHosts: values["exclude-hosts"]
+      .split(",")
+      .map((domain) => domain.trim())
+      .filter(Boolean),
+    checkInterval: parseIntWithDefault(values["check-interval"], 0, 0),
+    maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
+    extractionTimeout: parseIntWithDefault(
+      values["extraction-timeout"],
+      20000,
+      1000
+    ),
+  };
+
+  const [commandName, ...commandArgs] = positionals;
+  let command: CliCommand;
+  if (commandName === undefined) {
+    command = { name: "serve" };
+  } else if (commandName === "list") {
+    if (commandArgs.length > 0) {
+      throw new Error("The list command does not accept positional arguments.");
+    }
+    command = { name: "list", includeUrl: values["include-url"] };
+  } else if (commandName === "get") {
+    if (commandArgs.length > 1) {
+      throw new Error("The get command accepts at most one tab ID.");
+    }
+    command = {
+      name: "get",
+      id: commandArgs[0],
+      startIndex: parseIntWithDefault(values["start-index"], 0, 0),
+    };
+  } else {
+    throw new Error(`Unknown command: ${commandName}`);
+  }
+
+  return {
+    server,
+    command,
+    help: values.help,
+    version: values.version,
+  };
+}

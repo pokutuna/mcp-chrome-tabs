@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import { parseArgs } from "util";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import { createMcpServer, McpServerOptions, packageVersion } from "./mcp.js";
-import type { Browser } from "./browser/browser.js";
-
-type CliOptions = McpServerOptions & {
-  help: boolean;
-  version: boolean;
-};
+import {
+  createMcpServer,
+  executeListTabs,
+  executeReadTabContent,
+  packageVersion,
+} from "./mcp.js";
+import { parseCliArgs } from "./cli-options.js";
+import { parseTabRef } from "./view.js";
 
 function showHelp(): void {
   console.log(
@@ -17,6 +17,19 @@ MCP Chrome Tabs Server
 
 USAGE:
   mcp-chrome-tabs [OPTIONS]
+  mcp-chrome-tabs list [--include-url] [OPTIONS]
+  mcp-chrome-tabs get [ID] [--start-index=<index>] [OPTIONS]
+
+COMMANDS:
+  list                        List open tabs
+  get [ID]                    Get readable content from a tab
+                              (default: active tab)
+
+COMMAND OPTIONS:
+  --include-url               Include full URLs in list output
+
+  --start-index=<index>       Start reading content at this character index
+                              (default: 0)
 
 CONTENT EXTRACTION OPTIONS:
   --max-content-chars=<chars> Maximum content characters per single read
@@ -46,8 +59,8 @@ BROWSER OPTIONS:
                               Options: "chrome", "safari", "arc"
 
 OTHER OPTIONS:
-  --help                      Show this help message
-  --version                   Show version number
+  -h, --help                  Show this help message
+  -v, --version               Show version number
 
 
 REQUIREMENTS:
@@ -70,99 +83,42 @@ MCP CONFIGURATION EXAMPLE:
   );
 }
 
-function parseCliArgs(args: string[]): CliOptions {
-  const { values } = parseArgs({
-    args,
-    options: {
-      "max-content-chars": {
-        type: "string",
-        default: "20000",
-      },
-      "extraction-timeout": {
-        type: "string",
-        default: "20000",
-      },
-      "check-interval": {
-        type: "string",
-        default: "0",
-      },
-      "exclude-hosts": {
-        type: "string",
-        default: "",
-      },
-      "application-name": {
-        type: "string",
-        default: "Google Chrome",
-      },
-      "experimental-browser": {
-        type: "string",
-        default: "",
-      },
-      help: {
-        type: "boolean",
-        default: false,
-      },
-      version: {
-        type: "boolean",
-        default: false,
-      },
-    },
-    allowPositionals: false,
-    tokens: true,
-  });
-
-  function parseBrowserOption(browser: string): Browser {
-    if (browser === "" || browser === "chrome") return "chrome";
-    if (browser === "safari") return "safari";
-    if (browser === "arc") return "arc";
-    throw new Error(
-      `Invalid --experimental-browser option: "${browser}". Use "chrome", "safari", or "arc".`
-    );
-  }
-
-  function parseIntWithDefault(
-    value: string,
-    defaultValue: number,
-    minValue: number = 0
-  ): number {
-    const parsed = parseInt(value, 10);
-    if (isNaN(parsed) || parsed < minValue) return defaultValue;
-    return parsed;
-  }
-
-  const parsed: CliOptions = {
-    applicationName: values["application-name"],
-    browser: parseBrowserOption(values["experimental-browser"]),
-    excludeHosts: values["exclude-hosts"]
-      .split(",")
-      .map((d) => d.trim())
-      .filter(Boolean),
-    checkInterval: parseIntWithDefault(values["check-interval"], 0, 0),
-    maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
-    extractionTimeout: parseIntWithDefault(
-      values["extraction-timeout"],
-      20000,
-      1000
-    ),
-    help: values.help,
-    version: values.version,
-  };
-  return parsed;
-}
-
 async function main(): Promise<void> {
-  const options = parseCliArgs(process.argv.slice(2));
-  if (options.version) {
+  const cli = parseCliArgs(process.argv.slice(2));
+  if (cli.version) {
     console.log(await packageVersion());
-    process.exit(0);
+    return;
   }
-  if (options.help) {
+  if (cli.help) {
     showHelp();
-    process.exit(0);
+    return;
   }
+
+  if (cli.command.name === "list") {
+    console.log(await executeListTabs(cli.server, cli.command.includeUrl));
+    return;
+  }
+
+  if (cli.command.name === "get") {
+    const tabRef = cli.command.id ? parseTabRef(cli.command.id) : null;
+    if (cli.command.id && !tabRef) {
+      throw new Error(
+        `Invalid tab ID: "${cli.command.id}". Expected ID:<windowId>:<tabId>.`
+      );
+    }
+    console.log(
+      await executeReadTabContent(
+        cli.server,
+        cli.command.id,
+        cli.command.startIndex
+      )
+    );
+    return;
+  }
+
   // serveStdio picks the protocol era from the opening exchange, so the same
   // factory serves both 2025-era and 2026-07-28 clients
-  const handle = serveStdio(() => createMcpServer(options));
+  const handle = serveStdio(() => createMcpServer(cli.server));
 
   const shutdown = async () => {
     await handle.close();
@@ -175,4 +131,7 @@ async function main(): Promise<void> {
   process.stdin.on("end", shutdown);
 }
 
-await main().catch(console.error);
+await main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+});

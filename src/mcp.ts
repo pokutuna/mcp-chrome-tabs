@@ -63,6 +63,23 @@ async function getTab(
   }
 }
 
+export async function executeListTabs(
+  options: McpServerOptions,
+  includeUrl: boolean = false
+): Promise<string> {
+  const tabs = await listTabs(options);
+  return view.formatList(tabs, includeUrl);
+}
+
+export async function executeReadTabContent(
+  options: McpServerOptions,
+  id?: string,
+  startIndex: number = 0
+): Promise<string> {
+  const tab = await getTab(id ? view.parseTabRef(id) : null, options);
+  return view.formatTabContent(tab, startIndex, options.maxContentChars);
+}
+
 export async function packageVersion(): Promise<string> {
   const packageJsonText = await readFile(
     join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
@@ -122,12 +139,11 @@ export async function createMcpServer(
     },
     async (args) => {
       const { includeUrl } = args;
-      const tabs = await listTabs(options);
       return {
         content: [
           {
             type: "text",
-            text: view.formatList(tabs, includeUrl),
+            text: await executeListTabs(options, includeUrl),
           },
         ],
       };
@@ -160,16 +176,11 @@ export async function createMcpServer(
     },
     async (args) => {
       const { id, startIndex } = args;
-      const tab = await getTab(id ? view.parseTabRef(id) : null, options);
       return {
         content: [
           {
             type: "text",
-            text: view.formatTabContent(
-              tab,
-              startIndex,
-              options.maxContentChars
-            ),
+            text: await executeReadTabContent(options, id, startIndex),
           },
         ],
       };

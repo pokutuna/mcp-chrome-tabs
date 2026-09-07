@@ -66,7 +66,28 @@ You can also install this as a Claude Code plugin:
 
 ### Command Line Options
 
-The server accepts optional command line arguments for configuration:
+The package also provides read-only commands for accessing the same tab data as
+the MCP tools:
+
+```bash
+# List open tabs
+npx @pokutuna/mcp-chrome-tabs list
+
+# Include full URLs in the list
+npx @pokutuna/mcp-chrome-tabs list --include-url
+
+# Read the active tab
+npx @pokutuna/mcp-chrome-tabs get
+
+# Read a specific tab from an ID returned by list
+npx @pokutuna/mcp-chrome-tabs get ID:12345:67890
+
+# Continue reading truncated content
+npx @pokutuna/mcp-chrome-tabs get ID:12345:67890 --start-index=20000
+```
+
+Running the command without a subcommand starts the MCP server as before. The
+server and read-only commands accept optional arguments for configuration:
 
 **Content Extraction Options**
 
