@@ -1,178 +1,74 @@
-# JXA への全面移行ガイド
+# JXA 移行ガイド
 
-`src/browser/{chrome,safari,arc}.ts` を AppleScript から JXA (osascript -l JavaScript) に移行するための作業メモ。Chrome は `fix-multi-chrome-instance` ブランチで先行実施済み。Safari と Arc は未着手。
+この文書は、ブラウザー操作を AppleScript から JXA（`osascript -l JavaScript`）へ移行する際の設計と確認事項をまとめたものです。現在、Chrome の実装だけが JXA を使用し、Safari と Arc は AppleScript のままです。
 
-## なぜ JXA に移行するのか
+## Chrome で JXA を採用した理由
 
-### 直接の動機: Chrome の複数インスタンス問題
+同じ bundle ID（`com.google.Chrome`）を持つプロセスが複数あると、AppleScript の `tell application "Google Chrome"` は新しく起動したプロセスを選択することがあります。別ツールが起動した headless Chrome が後から選択されると、ユーザーが操作している Chrome に Apple Event が届きません。
 
-`tell application "Google Chrome"` は同一 bundle id (`com.google.Chrome`) のプロセスが複数あるとき **最新起動プロセス** を掴む。Playwright MCP のような別ツールが headless Chrome を後から起動すると、ユーザーの本来の Chrome ではなく headless 側に Apple Event が届いてしまう。
+JXA の `Application("Google Chrome")` は、複数プロセスがある場合に最も古く起動したプロセスを選択する挙動が経験的に観測されています。この挙動は公式 API ではなく、起動順に依存するヒューリスティックです。対象の Chrome より先に別プロセスが起動している場合は、そのプロセスが選択される可能性があります。
 
-JXA の `Application("Google Chrome")` は逆に **最古起動プロセス** を掴むため、ユーザーの Chrome を先に起動しておけば確実に本物に届く (deanishe.net の経験的観測。Apple 公式ドキュメントには記載なし)。
+PID を指定して Apple Event の送信先を確実に固定する公式 API は、`NSAppleEventDescriptor descriptorWithProcessIdentifier:` や `SBApplication applicationWithProcessIdentifier:` などの Objective-C bridge を必要とします。このプロジェクトでは、JXA から Chrome の sdef を解決できなくなる制約があるため採用していません。
 
-PID 指定で特定のプロセスを狙う公式 API (`NSAppleEventDescriptor descriptorWithProcessIdentifier:` / `SBApplication applicationWithProcessIdentifier:`) は ObjC bridge が必要で、JXA からだと Chrome の sdef 解決に失敗するので採用していない。
+JXA には、次の実装上の利点もあります。
 
-### 二次的なメリット (Safari/Arc にも効く)
+- タブ一覧や内容を JSON で受け渡せるため、区切り文字を本文から除外する必要がない。
+- `String(w.id())` のように ID の型を明示できる。
+- AppleScript の `tell` / `repeat` の入れ子が減り、処理の対応関係を追いやすい。
+- JavaScript の `try` / `catch` でエラー処理を書ける。
 
-1. **JSON でデータをやり取りできる** — AppleScript はカスタムセパレータ文字列 (`<|SEP:xxx|>`) でフィールドを連結する必要があり、本文中にセパレータが現れた場合の分離が脆弱。JXA なら `JSON.stringify` / `JSON.parse` で安全に往復できる。
-2. **値の型が明示的** — AppleScript の `id of aWindow` は number か string か曖昧 (Arc は UUID で string、Chrome は number)。JXA なら `String(w.id())` で確定できる。
-3. **コード量が減る** — `repeat with ... in ...` / `tell ... end tell` のネストが消えて、見通しが良くなる。
-4. **エラーハンドリングが try/catch で書ける** — AppleScript の `try ... on error` ブロックが消える。
+## ブラウザーごとの ID と API
 
-## 既存の AppleScript 実装の差分ポイント (browser ごと)
+| 項目            | Chrome（JXA）                           | Safari（AppleScript）               | Arc（AppleScript）   |
+| --------------- | --------------------------------------- | ----------------------------------- | -------------------- |
+| Window ID       | 数値を文字列化                          | 数値を文字列化                      | UUID 文字列          |
+| Tab ID          | 数値を文字列化                          | 固有 ID はなく、タブの index を使用 | UUID 文字列          |
+| 現在のタブ      | `activeTab()`                           | `current tab`                       | `active tab`         |
+| JavaScript 実行 | `app.execute(tab, { javascript: ... })` | `do JavaScript`                     | `execute javascript` |
 
-| 項目 | Chrome (移行済) | Safari | Arc |
-|---|---|---|---|
-| Window ID | number | number | UUID (string) |
-| Tab ID | number | **存在しない** (index で代用) | UUID (string) |
-| 現在のタブ | `active tab of window` | `current tab of window` | `active tab of window` |
-| JS 実行 | `execute javascript` | `do JavaScript` | `execute javascript` (戻り値が `"..."` でラップされ `\uXXXX` でエスケープされている可能性あり) |
-| Allow JS from AppleEvents 設定 | View > Developer 必須 | Develop メニュー > Allow JavaScript from Apple Events | 同左 |
+Safari の `tabId` はタブの位置を表す値です。タブを閉じると後続タブの index が変わるため、取得済みの `TabRef` が別のタブを指す可能性があります。Safari の window には ID がありますが、tab には Chrome や Arc のような固有 ID がありません。このため、Safari では Chrome のような `tabs.byId(...)` による参照はできず、index で参照します。
 
-### Safari の固有問題
+Arc の window と tab は UUID です。active tab を直接操作する方法は環境によって失敗するため、現在の実装は先に front window と active tab の ID を解決し、ID 指定で操作します。`make new tab` の戻り値から tab ID を取得できないため、新規タブの参照には active tab の ID を使っています。Arc の `execute javascript` の戻り値は文字列としてラップまたはエスケープされる場合があり、AppleScript 実装は必要に応じて `JSON.parse` で復元します。JXA 版で同じ API を使う場合の戻り値形式は未検証です。
 
-- **Tab に unique id が無い** ので `tabId = index` で代用している。タブを閉じると後続タブの index が変わって参照が壊れる (README にも明記)。JXA に移行しても解消しない既存問題。
-- AppleScript の `tab N` (index 指定) は JXA だと `window.tabs[index - 1]` (0-origin) になる。
+## 移行時の実装方針
 
-### Arc の固有問題
+Chrome の JXA は、window と tab を走査して `{ windowId, tabId, title, url }` の配列を作り、`JSON.stringify` で返します。TypeScript 側で `JSON.parse` して `Tab[]` に変換します。アプリケーション名は JSON 文字列リテラルとして JXA に埋め込み、入力値によるスクリプト構文の破壊を防ぎます。
 
-- `make new tab` の戻り値オブジェクトから `id` を取れない。AppleScript 版は `id of (active tab)` で代用している。JXA も同じ workaround が必要。
-- `execute javascript` の戻り値が `"..."` でラップされているケースがあり、`JSON.parse` でデコードしている。JXA だと `app.execute(t, {javascript: "..."})` の戻り値が string として返るので、同じ後処理 (string が `"..."` で囲まれていたら JSON.parse) が必要かは要検証。
+Chrome では `app.windows.byId(Number(windowId))` と `win.tabs.byId(Number(tabId))` を使います。Safari では window ID を使って window を検索し、tab は 1-origin の index を 0-origin の配列位置に変換して参照します。Arc では window と tab の UUID を文字列のまま扱います。
 
-## Chrome JXA 化での具体的な書き換えパターン
+Safari の JXA で `do JavaScript` を呼ぶ形式（たとえば `app.doJavaScript(script, { in: tab })`）は、sdef に基づく候補であり、実ブラウザーでの確認が必要です。
 
-### Before (AppleScript)
+JXA には AppleScript の `with timeout` に相当する構文がありません。通常の JXA 実行は `osascript.ts` の `execFile` timeout（既定 5 秒）とリトライで保護します。Chrome のページ内容取得は suspended tab で停止する可能性があるため、timeout を 3 秒、`maxRetries` を 0 とし、同じ Apple Event を再送しません。timeout になると `osascript` プロセスを終了し、呼び出し元へエラーを返します。
 
-```typescript
-const sep = separator();
-const appleScript = `
-  tell application "${applicationName}"
-    set output to ""
-    repeat with aWindow in (every window)
-      set windowId to id of aWindow
-      repeat with aTab in (every tab of aWindow)
-        set tabId to id of aTab
-        set tabTitle to title of aTab
-        set tabURL to URL of aTab
-        set output to output & windowId & "${sep}" & tabId & ...
-      end repeat
-    end repeat
-    return output
-  end tell
-`;
-const result = await executeAppleScript(appleScript);
-const lines = result.trim().split("\n");
-for (const line of lines) {
-  const [wId, tId, title, url] = line.split(sep);
-  // ...
-}
+AppleScript の `with timeout` は Apple Event の応答待ちだけを制限しますが、`execFile` の timeout は `osascript` プロセス全体を制限します。この差により、スクリプトの起動やタブの走査も 3 秒の予算に含まれます。20 タブの実測では、`osascript` の起動が 40〜50ms、正常なタブの `execute javascript` が 124〜225ms でした。所要時間は DOM のサイズにほとんど依存せず、5MB の Gmail でも 216ms です。一方 suspended tab は 10 秒でも応答しません。正常応答とハングの二分が明確で中間の分布がないため、3 秒はどちらの側にも十分な余裕があります。timeout を延ばしても救えるタブはなく、ハング時の待ち時間が伸びるだけです。
+
+Safari と Arc を移行する場合は、ブラウザーごとの停止条件を確認してから設定を決めます。
+
+JXA の実行エラーと JSON の解析エラーは TypeScript 側で処理します。ブラウザー固有の分岐が増える場合は、JXA 内の `try` / `catch` でブラウザー API のエラーを構造化して返す方法も検討できます。
+
+## Safari と Arc の移行候補
+
+Safari と Arc の移行は未実施です。移行する場合は、タブ一覧の ID 変換、指定タブと現在のタブの解決、新規タブ作成後の参照、JavaScript 実行の戻り値と timeout を、ブラウザーごとに実ブラウザーで確認します。Safari は tab index の変動、Arc は active tab ID を使う現行 workaround の妥当性を確認します。
+
+全ブラウザーの移行が完了し、呼び出し元がなくなった場合に限り、`executeAppleScript`、`escapeAppleScript`、`separator` の削除を検討します。
+
+## テスト
+
+E2E は Chrome のみを対象とします。Playwright の Chromium が必要なため、初回は `npx playwright install chromium` を実行します。テストは `playwright.chromium.executablePath()` で取得した bundled Chromium を専用の永続プロファイルで起動し、その `.app` の絶対パスを JXA の application name として渡します。通常の Google Chrome（`com.google.Chrome`）は起動したままで構いません。テスト用ブラウザーは別 bundle（`Google Chrome for Testing.app` / `com.google.chrome.for.testing`）です。
+
+起動前にテスト用実行ファイルを `pgrep -x` で確認します。既に起動中ならテストは失敗しますが、プロセスを終了させません。起動後は専用 URL の一意な marker が Playwright の context と `getTabList` の両方から見えることを確認し、対象プロセスが不明な場合は操作を中止します。
+
+専用プロファイルの [`Default/Preferences`](../tests/integration/chrome-profile/Default/Preferences) には、Apple Events からの JavaScript 実行を許可する `browser.allow_javascript_apple_events=true` が記録されています。通常実行、画面表示、デバッグ実行は次のコマンドで行います。
+
+```bash
+npm run test:e2e
+npm run test:e2e -- --headed
+npm run test:e2e -- --debug
 ```
 
-### After (JXA)
+Chrome のユニットテスト（`tests/chrome.test.ts`）は JXA の `Application` を vm 内のモックに差し替えてスクリプトの結果を検証します。実際の JXA や Chrome は起動しません。そのため、Safari と Arc の移行後は macOS 上の実ブラウザーで別途確認が必要です。
 
-```typescript
-const script = `
-  const app = Application(${jsonStringLiteral(applicationName)});
-  const out = [];
-  for (const w of app.windows()) {
-    const windowId = String(w.id());
-    for (const t of w.tabs()) {
-      out.push({
-        windowId,
-        tabId: String(t.id()),
-        title: t.title(),
-        url: t.url(),
-      });
-    }
-  }
-  JSON.stringify(out);
-`;
-const result = await executeJXA(script);
-const parsed = JSON.parse(result) as Tab[];
-```
+## 設計上の参考情報
 
-ポイント:
-- セパレータは不要 (JSON.stringify で往復)
-- `(every tab of aWindow)` → `w.tabs()` (関数呼び出し)
-- `id of aWindow` → `w.id()` (関数呼び出し)
-- 文字列リテラルは `jsonStringLiteral()` で JS 文字列リテラルに埋め込み (escape は JSON.stringify が担う)
-
-### Tab ID 指定での参照
-
-AppleScript:
-```applescript
-tell window id "${windowId}"
-  tell tab id "${tabId}"
-    ...
-  end tell
-end tell
-```
-
-JXA:
-```javascript
-const win = app.windows.byId(Number(windowId));
-const tab = win.tabs.byId(Number(tabId));
-```
-
-Safari の場合は `byId` が使えないので `win.tabs[index - 1]` (index は 1-origin で渡されてくるので -1 する) になる見込み。
-
-### `with timeout` の代替
-
-AppleScript の `with timeout of N seconds ... end timeout` は JXA で表現できない。Chrome 版では諦めて、osascript の execFile timeout (`osascript.ts` の 5 秒) と `retry` wrapper でカバーしている。
-
-```typescript
-// osascript.ts
-export async function executeJXA(script: string): Promise<string> {
-  return retry(async () => {
-    const { stdout, stderr } = await execFileAsync(
-      "osascript",
-      ["-l", "JavaScript", "-e", script],
-      { timeout: 5 * 1000, maxBuffer: 10 * 1024 * 1024 }
-    );
-    if (stderr) console.error("JXA stderr:", stderr);
-    return stdout.trim();
-  });
-}
-```
-
-suspended tab で `execute javascript` がハングするケースは、osascript プロセスごと SIGTERM されてリトライに任せる方針。
-
-### エラーハンドリング
-
-AppleScript の `try ... on error errMsg` は JXA の `try { ... } catch (e) { ... }` で書ける。Chrome 版では JXA 内 try は使わず、外側 (TypeScript) で `JSON.parse` の失敗を見て対応している。Safari/Arc のように分岐の多い処理 (active tab 取得など) は JXA 内 try/catch を使うほうが読みやすい場合がある。
-
-## 移行作業のステップ案
-
-1. **Safari**
-   - `getSafariTabList` を JXA で書き直す (Tab に id がないので `tabId: String(index + 1)` を保持)
-   - `getPageContent`: `app.windows.byId(...)` の Safari 版相当 (`app.windows.whose({id: ...})[0]` か `for` ループでマッチング) を確認
-   - `openURL`: `app.Tab({url: ...})` で新規 tab を作って `front_window.tabs.push(newTab)`
-   - `do JavaScript` は JXA だと `app.doJavaScript("...", {in: tab})` の形になる (Safari の sdef に準拠)
-
-2. **Arc**
-   - Chrome とほぼ同じ構造。`execute javascript` の戻り値ラップ問題は AppleScript 版と同じ後処理を保持
-   - `make new tab` の id 取得不可問題は `app.windows[0].activeTab().id()` で代用
-
-3. **executeAppleScript の削除可否**
-   - 全 browser を JXA 化したら `executeAppleScript` / `escapeAppleScript` / `separator` は不要になる可能性がある。`osascript.ts` から削除して問題ないか確認
-
-## テスト戦略
-
-- e2e (Playwright) は Chrome のみ対象なので、Safari/Arc の JXA 化は **手動確認**しかない
-- ローカルで以下を確認:
-  1. `npm run dev` で MCP server 起動 → Claude Code 等から `list_tabs` / `read_tab_content` / `open_in_new_tab` を順に呼んで結果が AppleScript 版と一致するか
-  2. 複数 window を開いて全 tab が列挙されるか
-  3. JS が実行できるか (タブ内容が取れるか)
-  4. 新規 tab を開いた直後にその tab の content が読めるか (TabRef がすぐ使えるか)
-
-## 参考
-
-- Chrome 移行のコミット: `c43be9d` (`fix-multi-chrome-instance` ブランチ)
-- JXA で複数インスタンスのうち最古を掴む挙動: https://www.deanishe.net/snippet/multiple-app-instances/
-- CI 上で AppleScript/JXA テストが動かなかった経緯: PR #131 のコメント
-
-## このドキュメントを書いた時点の状態
-
-- branch `fix-multi-chrome-instance`: Chrome 移行済み、main にマージ前 (PR 未作成)
-- branch `ci-enable-e2e`: PR #131 として close 済み (hosted runner で AppleScript ベース e2e は動かないと結論)
-- Safari/Arc の JXA 化は未着手
+- 複数のアプリケーションプロセスを扱う JXA の挙動については、[deanishe.net の調査](https://www.deanishe.net/snippet/multiple-app-instances/)を参照してください。プロセス選択の公式仕様ではありません。
+- AppleScript/JXA をホストされた CI runner で実行できない環境があるため、E2E は Apple Events を利用できる macOS 環境で実行します。

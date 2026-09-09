@@ -51,6 +51,30 @@ export async function executeAppleScript(script: string): Promise<string> {
   });
 }
 
+export type ExecuteJXAOptions = {
+  timeout?: number;
+  maxRetries?: number;
+  retryDelay?: number;
+};
+
+export async function executeJXA(
+  script: string,
+  options: ExecuteJXAOptions = {}
+): Promise<string> {
+  return retry(async () => {
+    const { stdout, stderr } = await execFileAsync(
+      "osascript",
+      ["-l", "JavaScript", "-e", script],
+      {
+        timeout: options.timeout ?? 5 * 1000,
+        maxBuffer: 10 * 1024 * 1024, // 10MB
+      }
+    );
+    if (stderr) console.error("JXA stderr:", stderr);
+    return stdout.trim();
+  }, options);
+}
+
 export function separator(): string {
   const uniqueId = Math.random().toString(36).substring(2);
   return `<|SEP:${uniqueId}|>`;
