@@ -119,7 +119,7 @@ not apply to is an error.
 
 **Common Options** (all commands)
 
-- `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
+- `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access. Hosts in the `MCP_CHROME_TABS_EXCLUDE_HOSTS` environment variable are excluded as well
 - `--application-name` - Application name to control (default: "Google Chrome")
 - `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
 - `--help` - Show help message with all available options
@@ -138,7 +138,9 @@ when using the commands above:
   from the same app get it too.
 - `--exclude-hosts` applies only to the process it is passed to. Hosts
   excluded in your MCP client config are not excluded for command line runs.
-  It filters what this package returns; it does not control access.
+  To exclude hosts everywhere, set `MCP_CHROME_TABS_EXCLUDE_HOSTS` in your
+  shell profile (e.g. `export MCP_CHROME_TABS_EXCLUDE_HOSTS="mail.google.com"`).
+  Either way, it filters what this package returns; it does not control access.
 
 To block access entirely, turn off the browser under System Settings > Privacy
 & Security > Automation for the app in question.
@@ -170,7 +172,7 @@ To enable resource subscription:
 
 ### Safari
 
-Note that Safari lacks unique tab IDs, making it sensitive to tab order changes during execution:
+Reading page content requires **Develop** > **Allow JavaScript from Apple Events** in Safari. Note that Safari lacks unique tab IDs, making it sensitive to tab order changes during execution:
 
 ```bash
 npx @pokutuna/mcp-chrome-tabs --application-name=Safari --experimental-browser=safari
