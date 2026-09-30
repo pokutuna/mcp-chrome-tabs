@@ -9,7 +9,7 @@ import {
   packageVersion,
 } from "./mcp.js";
 import { parseCliArgs } from "./cli-options.js";
-import { cliPagination } from "./view.js";
+import { cliPagination, escapeForTerminal } from "./view.js";
 
 function showHelp(): void {
   console.log(
@@ -96,6 +96,7 @@ async function main(): Promise<void> {
     return;
   }
 
+  // list escapes page titles per cell to keep its columns aligned
   if (cli.command.name === "list") {
     console.log(
       await executeListTabsForCli(cli.server, cli.command.includeUrl)
@@ -105,7 +106,7 @@ async function main(): Promise<void> {
 
   if (cli.command.name === "read") {
     const { target, offset } = cli.command;
-    console.log(
+    const content =
       target.by === "index"
         ? await executeReadTabContentByIndex(
             cli.server,
@@ -118,8 +119,9 @@ async function main(): Promise<void> {
             target.by === "id" ? target.id : undefined,
             offset,
             cliPagination
-          )
-    );
+          );
+    // The title, URL and content all come from the page
+    console.log(escapeForTerminal(content));
     return;
   }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   cliPagination,
+  escapeForTerminal,
   formatListForCli,
   formatTabContent,
 } from "../src/view.js";
@@ -237,5 +238,26 @@ describe("formatListForCli", () => {
 
   it("reports when no tabs are open", () => {
     expect(formatListForCli([])).toBe("No open tabs.");
+  });
+});
+
+describe("terminal escaping", () => {
+  it("shows control characters as \\xNN but keeps tabs and newlines", () => {
+    expect(escapeForTerminal("a\x1b]52;c;aGk=\x07b\tc\nd\re\x9b")).toBe(
+      "a\\x1b]52;c;aGk=\\x07b\tc\nd\\x0de\\x9b"
+    );
+  });
+
+  it("keeps a listed title on one row and inert", () => {
+    const tab: Tab = {
+      windowId: "1",
+      tabId: "2",
+      title: "evil\x1b[2J\nsecond line",
+      url: "https://example.com/",
+    };
+
+    expect(formatListForCli([tab])).toBe(
+      "[1]  ID:1:2  evil\\x1b[2J second line  example.com"
+    );
   });
 });

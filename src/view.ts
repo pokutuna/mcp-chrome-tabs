@@ -60,6 +60,23 @@ function padCell(text: string, width: number): string {
   return text + " ".repeat(Math.max(0, width - displayWidth(text)));
 }
 
+// Page-controlled text such as a title can carry escape sequences that a
+// terminal would run as commands (e.g. OSC 52 writes the clipboard). Show
+// C0/C1 controls as \xNN instead; tab and newline stay for readable content.
+const terminalControls = /[\x00-\x08\x0b-\x1f\x7f-\x9f]/g;
+
+export function escapeForTerminal(text: string): string {
+  return text.replace(
+    terminalControls,
+    (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`
+  );
+}
+
+// A table cell must stay on one line, so whitespace controls become spaces
+function tableCell(text: string): string {
+  return escapeForTerminal(text.replace(/[\t\n\r]+/g, " "));
+}
+
 // Index is ephemeral: it numbers the rows of this one listing and shifts as
 // windows are reordered or tabs open and close. ID is the durable reference,
 // so both are always shown and `read` takes either.
@@ -72,8 +89,8 @@ export function formatListForCli(
   const rows = tabs.map((tab, i) => ({
     index: `[${i + 1}]`,
     id: formatTabRef(tab),
-    title: tab.title,
-    locus: includeUrl ? tab.url : getDomain(tab.url),
+    title: tableCell(tab.title),
+    locus: tableCell(includeUrl ? tab.url : getDomain(tab.url)),
   }));
 
   const widest = (key: "index" | "id" | "title") =>
