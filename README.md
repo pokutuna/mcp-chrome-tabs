@@ -94,27 +94,35 @@ numbers that one listing only -- it shifts when windows are reordered or tabs
 open and close. `read -n <index>` re-resolves the index when it runs, so it can
 land on a different tab than you saw; pass the ID when that matters.
 
-Running the command without a subcommand starts the MCP server as before. The
-server and read-only commands accept optional arguments for configuration:
+Running the command without a subcommand starts the MCP server as before.
+Options apply to the commands shown below; passing one to a command it does
+not apply to is an error.
 
-**Content Extraction Options**
+**List Options**
+
+- `--include-url` - Show the full URL instead of the domain
+
+**Read Options**
+
+- `-n`, `--index` - Read the tab at this INDEX from `list`, resolved when `read` runs
+- `--offset` - Start reading content at this character offset (default: 0)
+
+**Content Options** (`read` and the MCP server)
 
 - `--max-content-chars` - Maximum content characters per single read (default: 20000)
 - `--extraction-timeout` - Timeout for content extraction worker in milliseconds (default: 20000)
-- `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
 
-**Resource Options**
+**MCP Server Options**
 
 - `--check-interval` - Interval in milliseconds to check for tab changes and send listChanged notifications (default: 0 disabled, set to 3000 for 3 seconds)
 
-**Browser Options**
+**Common Options** (all commands)
 
+- `--exclude-hosts` - Comma-separated list of domains to exclude from tab listing and content access
 - `--application-name` - Application name to control (default: "Google Chrome")
 - `--experimental-browser` - Browser implementation to use: "chrome", "safari", or "arc" (default: "chrome")
-
-**Other Options**
-
 - `--help` - Show help message with all available options
+- `--version` - Show the package version
 
 ### Resource Subscription (Optional)
 

@@ -14,65 +14,54 @@ import { cliPagination } from "./view.js";
 function showHelp(): void {
   console.log(
     `
-MCP Chrome Tabs Server
+mcp-chrome-tabs - Read browser tabs on macOS, as an MCP server or from the CLI
 
 USAGE:
-  mcp-chrome-tabs [OPTIONS]
-  mcp-chrome-tabs list [--include-url] [OPTIONS]
-  mcp-chrome-tabs read [ID | -n <index>] [--offset=<chars>] [OPTIONS]
+  mcp-chrome-tabs [OPTIONS]                         Start the MCP server (stdio)
+  mcp-chrome-tabs list [OPTIONS]                    List open tabs
+  mcp-chrome-tabs read [ID | -n <index>] [OPTIONS]  Read the main content of a tab
 
-COMMANDS:
-  list                        List open tabs as: [INDEX] ID TITLE DOMAIN
-                              INDEX numbers this listing only and shifts when
-                              windows are reordered or tabs change; pass the ID
-                              to refer to a tab reliably.
-  read [ID]                   Read the main content of a tab
-                              (default: active tab)
-                              Takes an ID from list, or -n <index>.
+EXAMPLES:
+  mcp-chrome-tabs list                              Prints: [INDEX] ID TITLE DOMAIN
+  mcp-chrome-tabs read                              Read the active tab
+  mcp-chrome-tabs read ID:12345:67890               Read the tab with this ID
+  mcp-chrome-tabs read -n 2                         Read the tab at INDEX 2
+  mcp-chrome-tabs read -n 2 --offset=20000          Continue a truncated read
 
-COMMAND OPTIONS:
+  INDEX numbers one listing only and shifts when windows are reordered or
+  tabs change. Pass the ID to refer to a tab reliably.
+
+LIST OPTIONS:
   --include-url               Show the full URL instead of the domain
-                              in list output
 
+READ OPTIONS:
   -n, --index=<index>         Read the tab at this INDEX from list
-                              Resolved against the tab list at the time
-                              read runs, so it can shift; prefer the ID
-                              when it matters.
-
-  --offset=<chars>            Start reading content at this character offset
+                              Resolved when read runs, so it can shift
+  --offset=<chars>            Start reading at this character offset
                               (default: 0)
 
-CONTENT EXTRACTION OPTIONS:
+CONTENT OPTIONS (read and MCP server):
   --max-content-chars=<chars> Maximum content characters per single read
                               (default: 20000)
-
-  --extraction-timeout=<ms>   Timeout for content extraction worker in milliseconds
+  --extraction-timeout=<ms>   Timeout for content extraction in milliseconds
                               (default: 20000)
-                              Example: 5000
 
-  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
-                              (default: "")
-                              Example: "github.com,example.com,test.com"
-
-RESOURCE OPTIONS:
-  --check-interval=<ms>       Interval for checking browser tabs in milliseconds
-                              and sending listChanged notifications
+MCP SERVER OPTIONS:
+  --check-interval=<ms>       Interval for checking browser tabs and sending
+                              listChanged notifications
                               (default: 0 disabled, set to 3000 for 3 seconds)
-                              Example: 3000
 
-BROWSER OPTIONS:
-  --application-name=<name>   Application name to control via AppleScript
+COMMON OPTIONS (all commands):
+  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
+                              Example: "github.com,example.com"
+  --application-name=<name>   Application name to control
                               (default: "Google Chrome")
                               Example: "Google Chrome Canary"
-
   --experimental-browser=<b>  Browser implementation to use
                               (default: "chrome")
                               Options: "chrome", "safari", "arc"
-
-OTHER OPTIONS:
   -h, --help                  Show this help message
   -v, --version               Show version number
-
 
 REQUIREMENTS:
   Chrome:
