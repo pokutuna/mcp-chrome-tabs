@@ -4,7 +4,8 @@ const execFile = vi.fn();
 
 vi.mock("child_process", () => ({ execFile }));
 
-const { executeJXA } = await import("../src/browser/osascript.js");
+const { executeJXA, toScriptError } =
+  await import("../src/browser/osascript.js");
 
 describe("executeJXA", () => {
   beforeEach(() => {
@@ -53,5 +54,43 @@ describe("executeJXA", () => {
 
     expect(execFile).toHaveBeenCalledTimes(2);
     expect(execFile.mock.calls[0][2]).toMatchObject({ timeout: 5000 });
+  });
+});
+
+describe("toScriptError", () => {
+  function execError(stderr: string, killed = false) {
+    return Object.assign(new Error("Command failed: osascript <script>"), {
+      stderr,
+      killed,
+    });
+  }
+
+  test("keeps only osascript's message and adds a hint for a known code", () => {
+    const error = toScriptError(
+      execError(
+        "execution error: Error: Error: Application can't be found. (-2700)\n"
+      ),
+      5000
+    );
+
+    expect(error.message).toBe(
+      "Application can't be found. (-2700)\n" +
+        "Check that the browser is installed and --application-name matches its name."
+    );
+  });
+
+  test("keeps the message as is for an unknown code", () => {
+    const error = toScriptError(
+      execError("execution error: Error: Something else. (-9999)\n"),
+      5000
+    );
+
+    expect(error.message).toBe("Something else. (-9999)");
+  });
+
+  test("reports a timeout with the time budget", () => {
+    const error = toScriptError(execError("", true), 3000);
+
+    expect(error.message).toContain("did not respond within 3000ms");
   });
 });
