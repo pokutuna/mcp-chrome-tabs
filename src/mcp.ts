@@ -41,7 +41,17 @@ async function getTab(
   opts: McpServerOptions
 ): Promise<TabContent> {
   const browser = getInterface(opts.browser);
+  // Refuse an excluded host before running any script in its page
+  if (browser.getTabInfo) {
+    const info = await browser.getTabInfo(opts.applicationName, tabRef);
+    if (isExcludedHost(info.url, opts.excludeHosts)) {
+      throw new Error("Content not available for excluded host");
+    }
+    // Read the tab just resolved, even if the active tab changes meanwhile
+    tabRef = { windowId: info.windowId, tabId: info.tabId };
+  }
   const raw = await browser.getPageContent(opts.applicationName, tabRef);
+  // The tab may have navigated to an excluded host since it was resolved
   if (isExcludedHost(raw.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");
   }

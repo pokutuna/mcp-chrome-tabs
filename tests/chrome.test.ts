@@ -96,6 +96,23 @@ describe("chromeBrowser JXA callers", () => {
     });
   });
 
+  test("resolves a tab's IDs and URL without running JavaScript in it", async () => {
+    const activeTab = makeTab(23, "Active", "https://active.test");
+    const execute = vi.fn();
+    runJXAWithApplication({
+      windows: () => [{ id: () => 5, activeTab: () => activeTab }],
+      execute,
+    });
+
+    await expect(chromeBrowser.getTabInfo!("Google Chrome")).resolves.toEqual({
+      windowId: "5",
+      tabId: "23",
+      title: "Active",
+      url: "https://active.test",
+    });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   test("opens a URL with special characters and returns the created tab ID", async () => {
     const newTab = makeTab(99, "", "");
     const app = {

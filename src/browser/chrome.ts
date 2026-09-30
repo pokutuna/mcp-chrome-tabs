@@ -46,31 +46,60 @@ async function getChromeTabList(applicationName: string): Promise<Tab[]> {
   return parsed.filter((t) => /^https?:\/\//.test(t.url));
 }
 
-async function getPageContent(
-  applicationName: string,
-  tab?: TabRef | null
-): Promise<TabContent> {
-  const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+// JXA that binds targetWindow and targetTab to the given tab, or to the first
+// window's active tab that is not blank
+function resolveTargetTab(tab?: TabRef | null): string {
+  return `
     const target = ${tab ? jsonLiteral(tab) : "null"};
-
-    // Chrome's "execute javascript" may hang on suspended tabs. JXA cannot
-    // express AppleScript's "with timeout" block, so use a short process
-    // timeout and do not retry this operation.
+    let targetWindow;
     let targetTab;
     if (target) {
-      const win = app.windows.byId(Number(target.windowId));
-      targetTab = win.tabs.byId(Number(target.tabId));
+      targetWindow = app.windows.byId(Number(target.windowId));
+      targetTab = targetWindow.tabs.byId(Number(target.tabId));
     } else {
       for (const w of app.windows()) {
         const t = w.activeTab();
         if (t.url() !== "about:blank") {
+          targetWindow = w;
           targetTab = t;
           break;
         }
       }
       if (!targetTab) throw new Error("No active tab found");
     }
+  `;
+}
+
+async function getTabInfo(
+  applicationName: string,
+  tab?: TabRef | null
+): Promise<Tab> {
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${resolveTargetTab(tab)}
+    JSON.stringify({
+      windowId: String(targetWindow.id()),
+      tabId: String(targetTab.id()),
+      title: targetTab.title(),
+      url: targetTab.url(),
+    });
+  `;
+
+  const result = await executeJXA(script);
+  return JSON.parse(result) as Tab;
+}
+
+async function getPageContent(
+  applicationName: string,
+  tab?: TabRef | null
+): Promise<TabContent> {
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${resolveTargetTab(tab)}
+
+    // Chrome's "execute javascript" may hang on suspended tabs. JXA cannot
+    // express AppleScript's "with timeout" block, so use a short process
+    // timeout and do not retry this operation.
 
     const result = {
       title: targetTab.title(),
@@ -106,6 +135,7 @@ async function openURL(applicationName: string, url: string): Promise<TabRef> {
 
 export const chromeBrowser: BrowserInterface = {
   getTabList: getChromeTabList,
+  getTabInfo,
   getPageContent,
   openURL,
 };

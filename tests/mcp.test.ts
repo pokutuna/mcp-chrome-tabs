@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import {
   createMcpServer,
@@ -548,6 +548,57 @@ describe("executeReadTabContent", () => {
     expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
       "Google Chrome",
       { windowId: "1001", tabId: "2001" }
+    );
+  });
+});
+
+describe("excluded hosts with a browser that resolves tabs first", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockBrowserInterface.getTabInfo = vi.fn();
+    vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
+      mockPageContent
+    );
+  });
+
+  afterEach(() => {
+    delete mockBrowserInterface.getTabInfo;
+  });
+
+  it("refuses an excluded host without reading the page", async () => {
+    vi.mocked(mockBrowserInterface.getTabInfo!).mockResolvedValue({
+      windowId: "1001",
+      tabId: "2001",
+      title: "Secret",
+      url: "https://secret.example.com/inbox",
+    });
+
+    await expect(
+      executeReadTabContent(
+        { ...defaultTestOptions, excludeHosts: ["example.com"] },
+        "ID:1001:2001"
+      )
+    ).rejects.toThrow("Content not available for excluded host");
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("reads the active tab it resolved, not whichever is active later", async () => {
+    vi.mocked(mockBrowserInterface.getTabInfo!).mockResolvedValue({
+      windowId: "1002",
+      tabId: "2003",
+      title: "Active",
+      url: mockPageContent.url,
+    });
+
+    await executeReadTabContent(defaultTestOptions);
+
+    expect(mockBrowserInterface.getTabInfo).toHaveBeenCalledWith(
+      "Google Chrome",
+      null
+    );
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1002", tabId: "2003" }
     );
   });
 });
