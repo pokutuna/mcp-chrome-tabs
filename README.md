@@ -145,6 +145,38 @@ when using the commands above:
 To block access entirely, turn off the browser under System Settings > Privacy
 & Security > Automation for the app in question.
 
+#### Asking before a coding agent reads a tab
+
+A coding agent with shell access can run `list` and `read`, or `osascript`
+directly, without the MCP tool approval. Its permission rules can require a
+confirmation for these commands, even in an auto-approve mode. The rules match
+the command text, so an agent that reaches the same program another way (for
+example `/usr/bin/osascript`) is not caught; they are a checkpoint, not access
+control.
+
+Claude Code (`~/.claude/settings.json`; use `deny` instead of `ask` to block):
+
+```json
+{
+  "permissions": {
+    "ask": [
+      "Bash(mcp-chrome-tabs *)",
+      "Bash(npx *mcp-chrome-tabs*)",
+      "Bash(osascript *)"
+    ]
+  }
+}
+```
+
+Codex CLI (`~/.codex/rules/default.rules`; use `"forbidden"` to block):
+
+```starlark
+prefix_rule(pattern = ["mcp-chrome-tabs"], decision = "prompt")
+prefix_rule(pattern = ["npx", "@pokutuna/mcp-chrome-tabs"], decision = "prompt")
+prefix_rule(pattern = ["npx", "-y", "@pokutuna/mcp-chrome-tabs"], decision = "prompt")
+prefix_rule(pattern = ["osascript"], decision = "prompt")
+```
+
 ### Resource Subscription (Optional)
 
 Setting `--check-interval` to a value greater than 0 enables resource subscription. When enabled, the server monitors tab list changes and sends MCP `listChanged` notifications to prompt clients to refresh their resource lists. This also makes `tab://{windowId}/{tabId}` resources available for all open tabs.
