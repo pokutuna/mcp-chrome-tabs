@@ -125,6 +125,24 @@ not apply to is an error.
 - `--help` - Show help message with all available options
 - `--version` - Show the package version
 
+### Who Can Read Your Tabs
+
+Anything that runs as your user and has Automation permission for the browser
+can read your tabs, with or without this package. Keep the following in mind
+when using the commands above:
+
+- `list` and `read` do not go through your MCP client's tool approval. Any
+  process or agent that can run shell commands can call them.
+- macOS grants Automation permission to the app that starts the process, such
+  as your terminal. If you allowed it once for the MCP server, commands run
+  from the same app get it too.
+- `--exclude-hosts` applies only to the process it is passed to. Hosts
+  excluded in your MCP client config are not excluded for command line runs.
+  It filters what this package returns; it does not control access.
+
+To block access entirely, turn off the browser under System Settings > Privacy
+& Security > Automation for the app in question.
+
 ### Resource Subscription (Optional)
 
 Setting `--check-interval` to a value greater than 0 enables resource subscription. When enabled, the server monitors tab list changes and sends MCP `listChanged` notifications to prompt clients to refresh their resource lists. This also makes `tab://{windowId}/{tabId}` resources available for all open tabs.

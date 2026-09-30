@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `list` and `read` commands for reading tabs from the command line without an MCP client. See "Who Can Read Your Tabs" in the README for how they relate to MCP tool approval and `--exclude-hosts`
+- Hints for common osascript failures, such as missing Automation permission, an application that cannot be found, a closed tab, or a timeout. The original error message and code are kept
+- A note on stderr when the MCP server is started by hand from a terminal
+
 ### Changed
 
 - **Breaking**: Require Node.js 22 or newer (Node.js 20 reached end-of-life)
+- Errors from osascript no longer include the whole script that was run
+
+### Fixed
+
+- Control the user's Chrome rather than another Chrome process started later, such as a headless Chrome launched by Playwright MCP (Chrome is now driven by JXA instead of AppleScript)
+- Refuse excluded hosts before running JavaScript in the page (Chrome only; Safari and Arc still check after reading the page)
 
 ## [0.8.3] - 2026-07-16
 
