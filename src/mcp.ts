@@ -359,7 +359,7 @@ export async function createMcpServer(
       } catch (error) {
         console.error("Error during periodic tab list update:", error);
       }
-      // The connection may have closed while the AppleScript call was in flight
+      // The connection may have closed while the osascript call was in flight
       if (stopped) return;
       // Use setTimeout instead of setInterval to avoid overlapping calls
       timer = setTimeout(check, options.checkInterval);

@@ -29,7 +29,7 @@ First, enable "Allow JavaScript from Apple Events" in Chrome:
 - (en) **View** > **Developer** > **Allow JavaScript from Apple Events**
 - (ja) **表示** > **開発 / 管理** > **Apple Events からの JavaScript を許可**
 
-When you first use the MCP server, macOS will prompt you to grant AppleScript automation permission to your MCP client (e.g., Claude Desktop, Claude Code). Click **OK** to allow access to Chrome. If you accidentally dismissed the dialog, you can enable it in **System Settings** > **Privacy & Security** > **Automation**.
+When you first use the MCP server, macOS will prompt you to grant Automation permission to your MCP client (e.g., Claude Desktop, Claude Code). Click **OK** to allow access to Chrome. If you accidentally dismissed the dialog, you can enable it in **System Settings** > **Privacy & Security** > **Automation**.
 
 When multiple Google Chrome processes exist, JXA generally selects the oldest process, but this is not a guaranteed process-selection API. Start your normal Chrome before starting other Chrome instances when process identity matters.
 
