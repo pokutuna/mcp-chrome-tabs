@@ -48,6 +48,19 @@ describe("parseCliArgs", () => {
     expect(parsed.server.maxContentChars).toBe(1000);
   });
 
+  it("rejects a numeric option that is not an integer in range", () => {
+    expect(() => parseCliArgs(["read", "1", "--offset=abc"])).toThrow(
+      'Invalid --offset: "abc". Expected an integer of 0 or more.'
+    );
+    expect(() => parseCliArgs(["--max-content-chars=0"])).toThrow(
+      'Invalid --max-content-chars: "0". Expected an integer of 1 or more.'
+    );
+    // Any integer in range is taken as given; there is no floor beyond it
+    expect(
+      parseCliArgs(["--extraction-timeout=500"]).server.extractionTimeout
+    ).toBe(500);
+  });
+
   it("reads the active tab only when asked with --active", () => {
     expect(parseCliArgs(["read", "--active"]).command).toEqual({
       name: "read",

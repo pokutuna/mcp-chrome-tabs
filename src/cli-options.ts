@@ -28,13 +28,15 @@ function parseBrowserOption(browser: string): Browser {
   );
 }
 
-function parseIntWithDefault(
-  value: string,
-  defaultValue: number,
-  minValue: number = 0
-): number {
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed) || parsed < minValue) return defaultValue;
+// A value that is not an integer is an error rather than the default, so a
+// typo does not silently run with other limits
+function parseInteger(name: string, value: string, minValue: number): number {
+  const parsed = /^\d+$/.test(value.trim()) ? Number(value) : NaN;
+  if (!Number.isSafeInteger(parsed) || parsed < minValue) {
+    throw new Error(
+      `Invalid --${name}: "${value}". Expected an integer of ${minValue} or more.`
+    );
+  }
   return parsed;
 }
 
@@ -173,12 +175,16 @@ export function parseCliArgs(
         ...parseHostList(values["exclude-hosts"]),
       ]),
     ],
-    checkInterval: parseIntWithDefault(values["check-interval"], 0, 0),
-    maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
-    extractionTimeout: parseIntWithDefault(
+    checkInterval: parseInteger("check-interval", values["check-interval"], 0),
+    maxContentChars: parseInteger(
+      "max-content-chars",
+      values["max-content-chars"],
+      1
+    ),
+    extractionTimeout: parseInteger(
+      "extraction-timeout",
       values["extraction-timeout"],
-      20000,
-      1000
+      1
     ),
   };
 
@@ -208,7 +214,7 @@ export function parseCliArgs(
     command = {
       name: "read",
       target: parseReadTarget(commandArgs[0], values.active),
-      offset: parseIntWithDefault(values.offset, 0, 0),
+      offset: parseInteger("offset", values.offset, 0),
     };
   } else {
     throw new Error(`Unknown command: ${commandName}`);
