@@ -16,11 +16,11 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 ## Requirements
 
 > [!IMPORTANT]  
-> **macOS only** - This MCP server uses Apple Events (JXA/AppleScript) and only works on macOS.
+> **macOS only** - This MCP server uses Apple Events (JXA) and only works on macOS.
 
 - **Node.js** 22 or newer
 - **MCP Client** such as Claude Desktop, Claude Code, or any MCP-compatible client
-- **macOS** only (uses Apple Events via JXA/AppleScript for browser automation)
+- **macOS** only (uses Apple Events via JXA for browser automation)
 
 ## Getting Started
 
@@ -95,7 +95,7 @@ open and close. `read <INDEX>` re-resolves the index when it runs, so it can
 land on a different tab than you saw; pass the ID when that matters. An
 argument starting with `ID:` is taken as an ID, and a bare number as an INDEX.
 
-Running the command without a subcommand starts the MCP server as before.
+Running the command without a subcommand starts the MCP server.
 Options apply to the commands shown below; passing one to a command it does
 not apply to is an error.
 

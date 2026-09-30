@@ -3,8 +3,8 @@ import { executeJXA, jsonLiteral } from "./osascript.js";
 
 /*
 Arc browser implementation notes
-- Tab/Window IDs are UUIDs (unlike Chrome's numeric IDs)
-- The return value of "execute javascript" may be wrapped in "..." and escaped (e.g., <), so decode it with JSON.parse
+- Tab/Window IDs are strings, mostly UUIDs (unlike Chrome's numeric IDs)
+- The return value of "execute javascript" may be wrapped in "..." and escaped (e.g., \u003C), so decode it with JSON.parse
 - Element references returned by windows() or tabs(), and the tab returned by
   calling activeTab(), cannot be resolved by Arc (error -1700). Windows and
   tabs are reached by index or by ID instead, and the active tab through the
@@ -100,7 +100,7 @@ async function getPageContent(
   });
   const parsed = JSON.parse(result) as TabContent;
 
-  // Arc's "execute javascript" return string may be wrapped in "..." and escaped like <.
+  // Arc's "execute javascript" return string may be wrapped in "..." and escaped like \u003C.
   // In such cases, decode with JSON.parse to restore the raw HTML.
   let content = parsed.content;
   if (content.startsWith('"') && content.endsWith('"')) {
