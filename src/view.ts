@@ -95,10 +95,27 @@ export function formatListForCli(
 
 type FrontMatter = { key: string; value: string | number | boolean };
 
+// How a paginated read names its start position, in the reader's own terms
+export type Pagination = {
+  key: string;
+  nextRead: (start: number) => string;
+};
+
+export const toolPagination: Pagination = {
+  key: "startIndex",
+  nextRead: (start) => `Read with startIndex of ${start}`,
+};
+
+export const cliPagination: Pagination = {
+  key: "offset",
+  nextRead: (start) => `Read with --offset=${start}`,
+};
+
 export function formatTabContent(
   tab: TabContent,
   startIndex: number = 0,
-  maxContentChars?: number
+  maxContentChars?: number,
+  pagination: Pagination = toolPagination
 ): string {
   const frontMatters: FrontMatter[] = [
     { key: "url", value: tab.url },
@@ -108,14 +125,14 @@ export function formatTabContent(
 
   if (startIndex > 0) {
     content = content.slice(startIndex);
-    frontMatters.push({ key: "startIndex", value: startIndex });
+    frontMatters.push({ key: pagination.key, value: startIndex });
   }
   const truncation =
     maxContentChars !== undefined && content.length > maxContentChars;
   if (truncation) {
     content = content.slice(0, maxContentChars);
     const nextStart = startIndex + maxContentChars;
-    content += `\n\n<ERROR>Content truncated. Read with startIndex of ${nextStart} to get more content.</ERROR>`;
+    content += `\n\n<ERROR>Content truncated. ${pagination.nextRead(nextStart)} to get more content.</ERROR>`;
     frontMatters.push({ key: "truncated", value: truncation });
   }
 

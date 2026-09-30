@@ -83,7 +83,8 @@ export async function executeListTabsForCli(
 export async function executeReadTabContent(
   options: McpServerOptions,
   id?: string,
-  startIndex: number = 0
+  startIndex: number = 0,
+  pagination: view.Pagination = view.toolPagination
 ): Promise<string> {
   // An unparsable id must not fall through to the active tab
   let tabRef: TabRef | null = null;
@@ -96,7 +97,12 @@ export async function executeReadTabContent(
     }
   }
   const tab = await getTab(tabRef, options);
-  return view.formatTabContent(tab, startIndex, options.maxContentChars);
+  return view.formatTabContent(
+    tab,
+    startIndex,
+    options.maxContentChars,
+    pagination
+  );
 }
 
 // Resolves against a freshly fetched list, so the index means the same thing it
@@ -104,7 +110,8 @@ export async function executeReadTabContent(
 export async function executeReadTabContentByIndex(
   options: McpServerOptions,
   index: number,
-  startIndex: number = 0
+  startIndex: number = 0,
+  pagination: view.Pagination = view.toolPagination
 ): Promise<string> {
   const tabs = await listTabs(options);
   const target = tabs[index - 1];
@@ -119,7 +126,12 @@ export async function executeReadTabContentByIndex(
     { windowId: target.windowId, tabId: target.tabId },
     options
   );
-  return view.formatTabContent(tab, startIndex, options.maxContentChars);
+  return view.formatTabContent(
+    tab,
+    startIndex,
+    options.maxContentChars,
+    pagination
+  );
 }
 
 export async function packageVersion(): Promise<string> {

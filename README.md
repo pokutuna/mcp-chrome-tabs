@@ -86,7 +86,7 @@ npx @pokutuna/mcp-chrome-tabs read ID:12345:67890
 npx @pokutuna/mcp-chrome-tabs read -n 2
 
 # Continue reading truncated content
-npx @pokutuna/mcp-chrome-tabs read ID:12345:67890 --start-index=20000
+npx @pokutuna/mcp-chrome-tabs read ID:12345:67890 --offset=20000
 ```
 
 `list` prints an INDEX column for reading the listing at a glance, but it

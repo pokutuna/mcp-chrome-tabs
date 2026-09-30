@@ -9,6 +9,7 @@ import {
   packageVersion,
 } from "./mcp.js";
 import { parseCliArgs } from "./cli-options.js";
+import { cliPagination } from "./view.js";
 
 function showHelp(): void {
   console.log(
@@ -18,7 +19,7 @@ MCP Chrome Tabs Server
 USAGE:
   mcp-chrome-tabs [OPTIONS]
   mcp-chrome-tabs list [--include-url] [OPTIONS]
-  mcp-chrome-tabs read [ID | -n <index>] [--start-index=<chars>] [OPTIONS]
+  mcp-chrome-tabs read [ID | -n <index>] [--offset=<chars>] [OPTIONS]
 
 COMMANDS:
   list                        List open tabs as: [INDEX] ID TITLE DOMAIN
@@ -38,7 +39,7 @@ COMMAND OPTIONS:
                               read runs, so it can shift; prefer the ID
                               when it matters.
 
-  --start-index=<chars>       Start reading content at this character index
+  --offset=<chars>            Start reading content at this character offset
                               (default: 0)
 
 CONTENT EXTRACTION OPTIONS:
@@ -112,11 +113,16 @@ async function main(): Promise<void> {
   }
 
   if (cli.command.name === "read") {
-    const { id, index, startIndex } = cli.command;
+    const { id, index, offset } = cli.command;
     console.log(
       index !== undefined
-        ? await executeReadTabContentByIndex(cli.server, index, startIndex)
-        : await executeReadTabContent(cli.server, id, startIndex)
+        ? await executeReadTabContentByIndex(
+            cli.server,
+            index,
+            offset,
+            cliPagination
+          )
+        : await executeReadTabContent(cli.server, id, offset, cliPagination)
     );
     return;
   }

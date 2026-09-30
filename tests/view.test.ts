@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { formatListForCli, formatTabContent } from "../src/view.js";
+import {
+  cliPagination,
+  formatListForCli,
+  formatTabContent,
+} from "../src/view.js";
 import type { Tab, TabContent } from "../src/browser/browser.js";
 
 describe("formatTabContent", () => {
@@ -49,6 +53,13 @@ describe("formatTabContent", () => {
       expect(result).toContain("Content truncated");
       expect(result).toContain("truncated: true");
       expect(result).toContain("startIndex of 100");
+    });
+
+    it("names the start position in CLI terms for CLI pagination", () => {
+      const result = formatTabContent(mockTab, 50, 100, cliPagination);
+      expect(result).toContain("offset: 50");
+      expect(result).toContain("Read with --offset=150");
+      expect(result).not.toContain("startIndex");
     });
 
     it("should handle startIndex correctly", () => {

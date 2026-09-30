@@ -24,7 +24,7 @@ describe("parseCliArgs", () => {
     const parsed = parseCliArgs([
       "read",
       "ID:1001:2001",
-      "--start-index=500",
+      "--offset=500",
       "--max-content-chars=1000",
     ]);
 
@@ -32,7 +32,7 @@ describe("parseCliArgs", () => {
       name: "read",
       id: "ID:1001:2001",
       index: undefined,
-      startIndex: 500,
+      offset: 500,
     });
     expect(parsed.server.maxContentChars).toBe(1000);
   });
@@ -42,7 +42,7 @@ describe("parseCliArgs", () => {
       name: "read",
       id: undefined,
       index: undefined,
-      startIndex: 0,
+      offset: 0,
     });
   });
 
@@ -51,13 +51,13 @@ describe("parseCliArgs", () => {
       name: "read",
       id: undefined,
       index: 3,
-      startIndex: 0,
+      offset: 0,
     });
     expect(parseCliArgs(["read", "-n", "3"]).command).toEqual({
       name: "read",
       id: undefined,
       index: 3,
-      startIndex: 0,
+      offset: 0,
     });
   });
 

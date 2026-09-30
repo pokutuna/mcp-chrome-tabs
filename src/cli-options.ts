@@ -5,7 +5,7 @@ import type { McpServerOptions } from "./mcp.js";
 export type CliCommand =
   | { name: "serve" }
   | { name: "list"; includeUrl: boolean }
-  | { name: "read"; id?: string; index?: number; startIndex: number };
+  | { name: "read"; id?: string; index?: number; offset: number };
 
 export type CliOptions = {
   server: McpServerOptions;
@@ -65,7 +65,7 @@ export function parseCliArgs(args: string[]): CliOptions {
         type: "boolean",
         default: false,
       },
-      "start-index": {
+      offset: {
         type: "string",
         default: "0",
       },
@@ -134,7 +134,7 @@ export function parseCliArgs(args: string[]): CliOptions {
       name: "read",
       id: commandArgs[0],
       index,
-      startIndex: parseIntWithDefault(values["start-index"], 0, 0),
+      offset: parseIntWithDefault(values.offset, 0, 0),
     };
   } else {
     throw new Error(`Unknown command: ${commandName}`);
