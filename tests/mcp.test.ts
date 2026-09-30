@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import {
   createMcpServer,
@@ -10,11 +10,19 @@ import type {
   Tab,
   TabContent,
   BrowserInterface,
+  TabRef,
 } from "../src/browser/browser.js";
 
 // Mock the getInterface function from browser.js
+// getTabInfo resolves a given ref as-is and the active tab to ID:1001:2001
 const mockBrowserInterface: BrowserInterface = {
   getTabList: vi.fn(),
+  getTabInfo: vi.fn(async (_app: string, tab?: TabRef | null) => ({
+    windowId: tab?.windowId ?? "1001",
+    tabId: tab?.tabId ?? "2001",
+    title: "Resolved",
+    url: "https://example.com/page",
+  })),
   getPageContent: vi.fn(),
   openURL: vi.fn(),
 };
@@ -536,9 +544,13 @@ describe("executeReadTabContent", () => {
   it("reads the active tab when no ID is given", async () => {
     await executeReadTabContent(defaultTestOptions);
 
-    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+    expect(mockBrowserInterface.getTabInfo).toHaveBeenCalledWith(
       "Google Chrome",
       null
+    );
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1001", tabId: "2001" }
     );
   });
 
@@ -552,21 +564,16 @@ describe("executeReadTabContent", () => {
   });
 });
 
-describe("excluded hosts with a browser that resolves tabs first", () => {
+describe("excluded hosts are checked before reading the page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockBrowserInterface.getTabInfo = vi.fn();
     vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
       mockPageContent
     );
   });
 
-  afterEach(() => {
-    delete mockBrowserInterface.getTabInfo;
-  });
-
   it("refuses an excluded host without reading the page", async () => {
-    vi.mocked(mockBrowserInterface.getTabInfo!).mockResolvedValue({
+    vi.mocked(mockBrowserInterface.getTabInfo).mockResolvedValueOnce({
       windowId: "1001",
       tabId: "2001",
       title: "Secret",
@@ -583,7 +590,7 @@ describe("excluded hosts with a browser that resolves tabs first", () => {
   });
 
   it("reads the active tab it resolved, not whichever is active later", async () => {
-    vi.mocked(mockBrowserInterface.getTabInfo!).mockResolvedValue({
+    vi.mocked(mockBrowserInterface.getTabInfo).mockResolvedValueOnce({
       windowId: "1002",
       tabId: "2003",
       title: "Active",

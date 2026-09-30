@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const executeJXA = vi.fn();
 
-vi.mock("../src/browser/osascript.js", () => ({ executeJXA }));
+vi.mock("../src/browser/osascript.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/browser/osascript.js")>()),
+  executeJXA,
+}));
 
 const { chromeBrowser } = await import("../src/browser/chrome.js");
 
@@ -104,7 +107,7 @@ describe("chromeBrowser JXA callers", () => {
       execute,
     });
 
-    await expect(chromeBrowser.getTabInfo!("Google Chrome")).resolves.toEqual({
+    await expect(chromeBrowser.getTabInfo("Google Chrome")).resolves.toEqual({
       windowId: "5",
       tabId: "23",
       title: "Active",

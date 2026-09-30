@@ -24,6 +24,8 @@ export type McpServerOptions = {
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
+  // A blank or unparsable URL, such as an empty Safari tab, has no host
+  if (!URL.canParse(url)) return false;
   const u = new URL(url);
   return excludeHosts.some(
     (d) => u.hostname === d || u.hostname.endsWith("." + d)
@@ -42,15 +44,15 @@ async function getTab(
 ): Promise<TabContent> {
   const browser = getInterface(opts.browser);
   // Refuse an excluded host before running any script in its page
-  if (browser.getTabInfo) {
-    const info = await browser.getTabInfo(opts.applicationName, tabRef);
-    if (isExcludedHost(info.url, opts.excludeHosts)) {
-      throw new Error("Content not available for excluded host");
-    }
-    // Read the tab just resolved, even if the active tab changes meanwhile
-    tabRef = { windowId: info.windowId, tabId: info.tabId };
+  const info = await browser.getTabInfo(opts.applicationName, tabRef);
+  if (isExcludedHost(info.url, opts.excludeHosts)) {
+    throw new Error("Content not available for excluded host");
   }
-  const raw = await browser.getPageContent(opts.applicationName, tabRef);
+  // Read the tab just resolved, even if the active tab changes meanwhile
+  const raw = await browser.getPageContent(opts.applicationName, {
+    windowId: info.windowId,
+    tabId: info.tabId,
+  });
   // The tab may have navigated to an excluded host since it was resolved
   if (isExcludedHost(raw.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");

@@ -1,5 +1,5 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
-import { executeJXA } from "./osascript.js";
+import { executeJXA, jsonLiteral } from "./osascript.js";
 
 /*
 Why JXA instead of AppleScript:
@@ -16,12 +16,6 @@ selected instead. There is no public API to target a specific PID without ObjC
 bridging, so we rely on this behavior documented at
 https://www.deanishe.net/snippet/multiple-app-instances/
 */
-
-// Embeds a value into the JXA source as a JSON literal, so that user input
-// cannot break out of the surrounding script syntax.
-function jsonLiteral(value: unknown): string {
-  return JSON.stringify(value);
-}
 
 async function getChromeTabList(applicationName: string): Promise<Tab[]> {
   const script = `

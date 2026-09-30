@@ -1,134 +1,123 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
-import {
-  escapeAppleScript,
-  executeAppleScript,
-  separator,
-} from "./osascript.js";
+import { executeJXA, jsonLiteral } from "./osascript.js";
+
+/*
+Safari implementation notes
+- Safari tabs have no ID. tabId is the tab's 1-based index in its window, so
+  it shifts when tabs before it are closed or moved.
+- The active tab is the front window's current tab.
+- Reading page content requires Develop > Allow JavaScript from Apple Events.
+*/
 
 async function getSafariTabList(applicationName: string): Promise<Tab[]> {
-  const sep = separator();
-  const appleScript = `
-    tell application "${applicationName}"
-      set output to ""
-      repeat with aWindow in (every window)
-        set windowId to id of aWindow
-        repeat with aTab in (every tab of aWindow)
-          set tabIndex to index of aTab
-          set tabTitle to name of aTab
-          set tabURL to URL of aTab
-          set output to output & windowId & "${sep}" & tabIndex & "${sep}" & tabTitle & "${sep}" & tabURL & "\\n"
-        end repeat
-      end repeat
-      return output
-    end tell
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    const out = [];
+    for (const w of app.windows()) {
+      const windowId = String(w.id());
+      for (const t of w.tabs()) {
+        out.push({
+          windowId,
+          tabId: String(t.index()),
+          title: t.name(),
+          url: t.url() ?? "",
+        });
+      }
+    }
+    JSON.stringify(out);
   `;
 
-  const result = await executeAppleScript(appleScript);
-  const lines = result.trim().split("\n");
-  const tabs: Tab[] = [];
-  for (const line of lines) {
-    const [wId, tId, title, url] = line.split(sep);
-    if (!/^https?:\/\//.test(url)) continue;
+  const result = await executeJXA(script);
+  const parsed = JSON.parse(result) as Tab[];
+  return parsed.filter((t) => /^https?:\/\//.test(t.url));
+}
 
-    // Note: Safari tab IDs are volatile indices that change when tabs are closed
-    // Unlike Chrome, Safari doesn't provide stable unique tab identifiers
-    tabs.push({
-      windowId: wId,
-      tabId: tId,
-      title: title.trim(),
-      url: url.trim(),
+// JXA that binds targetWindow and targetTab to the given tab, or to the front
+// window's current tab
+function resolveTargetTab(tab?: TabRef | null): string {
+  return `
+    const target = ${tab ? jsonLiteral(tab) : "null"};
+    let targetWindow;
+    let targetTab;
+    if (target) {
+      targetWindow = app.windows.byId(Number(target.windowId));
+      targetTab = targetWindow.tabs[Number(target.tabId) - 1];
+    } else {
+      targetWindow = app.windows[0];
+      targetTab = targetWindow.currentTab();
+      if ((targetTab.url() ?? "about:blank") === "about:blank") {
+        throw new Error("No active tab found");
+      }
+    }
+  `;
+}
+
+async function getTabInfo(
+  applicationName: string,
+  tab?: TabRef | null
+): Promise<Tab> {
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${resolveTargetTab(tab)}
+    JSON.stringify({
+      windowId: String(targetWindow.id()),
+      tabId: String(targetTab.index()),
+      title: targetTab.name(),
+      url: targetTab.url() ?? "",
     });
-  }
-  return tabs;
+  `;
+
+  const result = await executeJXA(script);
+  return JSON.parse(result) as Tab;
 }
 
 async function getPageContent(
   applicationName: string,
   tab?: TabRef | null
 ): Promise<TabContent> {
-  const sep = separator();
-  const inner = `
-    set tabTitle to name
-    set tabURL to URL
-    set tabContent to do JavaScript "document.documentElement.outerHTML"
-    return tabTitle & "${sep}" & tabURL & "${sep}" & tabContent
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${resolveTargetTab(tab)}
+
+    // As with Chrome, JavaScript in a suspended tab may never return, so the
+    // caller uses a short process timeout and does not retry.
+    JSON.stringify({
+      title: targetTab.name(),
+      url: targetTab.url() ?? "",
+      content: app.doJavaScript("document.documentElement.outerHTML", {
+        in: targetTab,
+      }),
+    });
   `;
-  const appleScript = tab
-    ? `
-      try
-        tell application "${applicationName}"
-          tell window id "${tab.windowId}"
-            tell tab ${tab.tabId}
-              with timeout of 3 seconds
-                ${inner}
-              end timeout
-            end tell
-          end tell
-        end tell
-      on error errMsg
-        return "ERROR" & "${sep}" & errMsg
-      end try
-    `
-    : `
-      try
-        tell application "${applicationName}"
-          tell front window
-            set t to current tab
-            if URL of t is not "about:blank" then
-              tell t
-                with timeout of 3 seconds
-                  ${inner}
-                end timeout
-              end tell
-            else
-              error "No active tab found"
-            end if
-          end tell
-        end tell
-      on error errMsg
-        return "ERROR" & "${sep}" & errMsg
-      end try
-    `;
 
-  const scriptResult = await executeAppleScript(appleScript);
-  if (scriptResult.startsWith(`ERROR${sep}`)) {
-    throw new Error(scriptResult.split(sep)[1]);
-  }
-
-  const parts = scriptResult.split(sep).map((part) => part.trim());
-  if (parts.length < 3) {
-    throw new Error("Failed to read the tab content");
-  }
-
-  const [title, url, content] = parts;
-
-  return {
-    title,
-    url,
-    content,
-  };
+  const result = await executeJXA(script, {
+    timeout: 3 * 1000,
+    maxRetries: 0,
+  });
+  return JSON.parse(result) as TabContent;
 }
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
-  const escapedUrl = escapeAppleScript(url);
-  const sep = separator();
-  const appleScript = `
-    tell application "${applicationName}"
-      tell front window
-        set newTab to (make new tab with properties {URL:"${escapedUrl}"})
-        set windowId to id
-        set tabIndex to index of newTab
-        return (windowId as string) & "${sep}" & (tabIndex as string)
-      end tell
-    end tell
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    const win = app.windows[0];
+    const newTab = app.Tab({ url: ${jsonLiteral(url)} });
+    win.tabs.push(newTab);
+    // Unlike Chrome, Safari leaves a new tab in the background
+    win.currentTab = newTab;
+    JSON.stringify({
+      windowId: String(win.id()),
+      tabId: String(newTab.index()),
+    });
   `;
-  const result = await executeAppleScript(appleScript);
-  const [windowId, tabId] = result.trim().split(sep);
-  return { windowId, tabId };
+
+  const result = await executeJXA(script);
+  return JSON.parse(result) as TabRef;
 }
 
 export const safariBrowser: BrowserInterface = {
   getTabList: getSafariTabList,
+  getTabInfo,
   getPageContent,
   openURL,
 };

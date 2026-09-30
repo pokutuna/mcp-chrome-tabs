@@ -3,13 +3,10 @@ import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
 
-export function escapeAppleScript(str: string): string {
-  // https://discussions.apple.com/thread/4247426?sortBy=rank
-  return str
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r");
+// Embeds a value into JXA source as a JSON literal, so that user input cannot
+// break out of the surrounding script syntax.
+export function jsonLiteral(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 export async function retry<T>(
@@ -81,10 +78,6 @@ async function runOsascript(
   }
 }
 
-export async function executeAppleScript(script: string): Promise<string> {
-  return retry(() => runOsascript(["-e", script], 5 * 1000));
-}
-
 export type ExecuteJXAOptions = {
   timeout?: number;
   maxRetries?: number;
@@ -103,9 +96,4 @@ export async function executeJXA(
       ),
     options
   );
-}
-
-export function separator(): string {
-  const uniqueId = Math.random().toString(36).substring(2);
-  return `<|SEP:${uniqueId}|>`;
 }

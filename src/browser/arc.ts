@@ -1,119 +1,100 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
-import {
-  escapeAppleScript,
-  executeAppleScript,
-  separator,
-} from "./osascript.js";
+import { executeJXA, jsonLiteral } from "./osascript.js";
 
 /*
 Arc browser implementation notes
 - Tab/Window IDs are UUIDs (unlike Chrome's numeric IDs)
-- The return value of "execute javascript" may be wrapped in "..." and escaped (e.g., \u003C), so decode it with JSON.parse
-- Directly telling the active tab (front window/active tab) can fail depending on the environment;
-  even when unspecified, first resolve the active tab's windowId/tabId and execute via the ID-targeted path for stability
+- The return value of "execute javascript" may be wrapped in "..." and escaped (e.g., <), so decode it with JSON.parse
+- Operating on the active tab directly can fail depending on the environment,
+  so the active tab is first resolved to its IDs and then looked up by ID
+- The ID of a tab created by "make new tab" cannot be read, so openURL
+  returns the active tab, which is the new one
 */
 
 async function getArcTabList(applicationName: string): Promise<Tab[]> {
-  const sep = separator();
-  const appleScript = `
-    tell application "${applicationName}"
-      set output to ""
-      repeat with aWindow in (every window)
-        set windowId to id of aWindow
-        repeat with aTab in (every tab of aWindow)
-          set tabId to id of aTab
-          set tabTitle to title of aTab
-          set tabURL to URL of aTab
-          set output to output & windowId & "${sep}" & tabId & "${sep}" & tabTitle & "${sep}" & tabURL & "\\n"
-        end repeat
-      end repeat
-      return output
-    end tell
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    const out = [];
+    for (const w of app.windows()) {
+      const windowId = String(w.id());
+      for (const t of w.tabs()) {
+        out.push({
+          windowId,
+          tabId: String(t.id()),
+          title: t.title(),
+          url: t.url() ?? "",
+        });
+      }
+    }
+    JSON.stringify(out);
   `;
 
-  const result = await executeAppleScript(appleScript);
-  const lines = result.trim().split("\n");
-  const tabs: Tab[] = [];
-  for (const line of lines) {
-    const [wId, tId, title, url] = line.split(sep);
-    if (!/^https?:\/\//.test(url)) continue;
-
-    tabs.push({
-      windowId: wId,
-      tabId: tId,
-      title: title.trim(),
-      url: url.trim(),
-    });
-  }
-  return tabs;
+  const result = await executeJXA(script);
+  const parsed = JSON.parse(result) as Tab[];
+  return parsed.filter((t) => /^https?:\/\//.test(t.url));
 }
 
-async function getActiveTabRef(applicationName: string): Promise<TabRef> {
-  const sep = separator();
-  const appleScript = `
-    try
-      tell application "${applicationName}"
-        set wId to id of front window
-        set tId to id of active tab of front window
-        return wId & "${sep}" & tId
-      end tell
-    on error errMsg
-      return "ERROR" & "${sep}" & errMsg
-    end try
+// JXA that binds targetWindow and targetTab to the given tab, or to the front
+// window's active tab
+function resolveTargetTab(tab?: TabRef | null): string {
+  return `
+    let target = ${tab ? jsonLiteral(tab) : "null"};
+    if (!target) {
+      const front = app.windows[0];
+      target = { windowId: front.id(), tabId: front.activeTab().id() };
+    }
+    const targetWindow = app.windows.byId(String(target.windowId));
+    const targetTab = targetWindow.tabs.byId(String(target.tabId));
   `;
-  const result = await executeAppleScript(appleScript);
-  if (result.startsWith(`ERROR${sep}`)) {
-    throw new Error(result.split(sep)[1]);
-  }
-  const [windowId, tabId] = result.split(sep);
-  return { windowId: windowId.trim(), tabId: tabId.trim() };
+}
+
+async function getTabInfo(
+  applicationName: string,
+  tab?: TabRef | null
+): Promise<Tab> {
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${resolveTargetTab(tab)}
+    JSON.stringify({
+      windowId: String(targetWindow.id()),
+      tabId: String(targetTab.id()),
+      title: targetTab.title(),
+      url: targetTab.url() ?? "",
+    });
+  `;
+
+  const result = await executeJXA(script);
+  return JSON.parse(result) as Tab;
 }
 
 async function getPageContent(
   applicationName: string,
   tab?: TabRef | null
 ): Promise<TabContent> {
-  const sep = separator();
-  const inner = `
-    set tabTitle to title
-    set tabURL to URL
-    set tabContent to execute javascript "document.documentElement.outerHTML"
-    return tabTitle & "${sep}" & tabURL & "${sep}" & tabContent
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${resolveTargetTab(tab)}
+
+    // As with Chrome, JavaScript in a suspended tab may never return, so the
+    // caller uses a short process timeout and does not retry.
+    JSON.stringify({
+      title: targetTab.title(),
+      url: targetTab.url() ?? "",
+      content: app.execute(targetTab, {
+        javascript: "document.documentElement.outerHTML",
+      }),
+    });
   `;
 
-  const targetTab: TabRef = tab ?? (await getActiveTabRef(applicationName));
+  const result = await executeJXA(script, {
+    timeout: 3 * 1000,
+    maxRetries: 0,
+  });
+  const parsed = JSON.parse(result) as TabContent;
 
-  const appleScript = `
-    try
-      tell application "${applicationName}"
-        tell window id "${targetTab.windowId}"
-          tell tab id "${targetTab.tabId}"
-            with timeout of 3 seconds
-              ${inner}
-            end timeout
-          end tell
-        end tell
-      end tell
-    on error errMsg
-      return "ERROR" & "${sep}" & errMsg
-    end try
-  `;
-
-  const scriptResult = await executeAppleScript(appleScript);
-  if (scriptResult.startsWith(`ERROR${sep}`)) {
-    throw new Error(scriptResult.split(sep)[1]);
-  }
-
-  const parts = scriptResult.split(sep).map((part) => part.trim());
-  if (parts.length < 3) {
-    throw new Error("Failed to read the tab content");
-  }
-
-  const [title, url, rawContent] = parts;
-
-  // Arc's "execute javascript" return string may be wrapped in "..." and escaped like \u003C.
+  // Arc's "execute javascript" return string may be wrapped in "..." and escaped like <.
   // In such cases, decode with JSON.parse to restore the raw HTML.
-  let content = rawContent;
+  let content = parsed.content;
   if (content.startsWith('"') && content.endsWith('"')) {
     try {
       content = JSON.parse(content);
@@ -121,34 +102,27 @@ async function getPageContent(
       // If decoding fails, return the value as-is
     }
   }
-
-  return {
-    title,
-    url,
-    content,
-  };
+  return { ...parsed, content };
 }
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
-  const escapedUrl = escapeAppleScript(url);
-  const sep = separator();
-  const appleScript = `
-    tell application "${applicationName}"
-      tell front window
-        set newTab to (make new tab with properties {URL:"${escapedUrl}"})
-        set windowId to id
-        set tabId to id of (active tab) -- cannot retrieve id of newTab
-        return windowId & "${sep}" & tabId
-      end tell
-    end tell
+  const script = `
+    const app = Application(${jsonLiteral(applicationName)});
+    const win = app.windows[0];
+    win.tabs.push(app.Tab({ url: ${jsonLiteral(url)} }));
+    JSON.stringify({
+      windowId: String(win.id()),
+      tabId: String(win.activeTab().id()),
+    });
   `;
-  const result = await executeAppleScript(appleScript);
-  const [windowId, tabId] = result.trim().split(sep);
-  return { windowId, tabId };
+
+  const result = await executeJXA(script);
+  return JSON.parse(result) as TabRef;
 }
 
 export const arcBrowser: BrowserInterface = {
   getTabList: getArcTabList,
+  getTabInfo,
   getPageContent,
   openURL,
 };
