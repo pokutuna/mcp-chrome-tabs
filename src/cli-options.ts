@@ -93,7 +93,22 @@ function parseReadTarget(arg: string | undefined, active: boolean): ReadTarget {
   );
 }
 
-export function parseCliArgs(args: string[]): CliOptions {
+// Hosts excluded for every run, in addition to --exclude-hosts. Set it in the
+// shell profile so that command line runs exclude the same hosts as the
+// MCP client config.
+export const excludeHostsEnv = "MCP_CHROME_TABS_EXCLUDE_HOSTS";
+
+function parseHostList(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((domain) => domain.trim())
+    .filter(Boolean);
+}
+
+export function parseCliArgs(
+  args: string[],
+  env: NodeJS.ProcessEnv = process.env
+): CliOptions {
   const { values, positionals, tokens } = parseArgs({
     args,
     options: {
@@ -152,10 +167,12 @@ export function parseCliArgs(args: string[]): CliOptions {
   const server: McpServerOptions = {
     applicationName: values["application-name"],
     browser: parseBrowserOption(values["experimental-browser"]),
-    excludeHosts: values["exclude-hosts"]
-      .split(",")
-      .map((domain) => domain.trim())
-      .filter(Boolean),
+    excludeHosts: [
+      ...new Set([
+        ...parseHostList(env[excludeHostsEnv]),
+        ...parseHostList(values["exclude-hosts"]),
+      ]),
+    ],
     checkInterval: parseIntWithDefault(values["check-interval"], 0, 0),
     maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
     extractionTimeout: parseIntWithDefault(

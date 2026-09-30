@@ -20,6 +20,19 @@ describe("parseCliArgs", () => {
     expect(parsed.server.excludeHosts).toEqual(["example.com", "test.com"]);
   });
 
+  it("excludes the hosts in the environment variable as well", () => {
+    const env = { MCP_CHROME_TABS_EXCLUDE_HOSTS: "mail.test, example.com" };
+
+    expect(parseCliArgs(["list"], env).server.excludeHosts).toEqual([
+      "mail.test",
+      "example.com",
+    ]);
+    expect(
+      parseCliArgs(["--exclude-hosts=example.com,bank.test"], env).server
+        .excludeHosts
+    ).toEqual(["mail.test", "example.com", "bank.test"]);
+  });
+
   it("parses the read command with a tab ID and pagination", () => {
     const parsed = parseCliArgs([
       "read",

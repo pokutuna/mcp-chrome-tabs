@@ -56,6 +56,8 @@ MCP SERVER OPTIONS:
 COMMON OPTIONS (all commands):
   --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
                               Example: "github.com,example.com"
+                              Hosts in $MCP_CHROME_TABS_EXCLUDE_HOSTS are
+                              excluded as well
   --application-name=<name>   Application name to control
                               (default: "Google Chrome")
                               Example: "Google Chrome Canary"
