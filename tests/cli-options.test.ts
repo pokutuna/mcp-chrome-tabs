@@ -43,42 +43,33 @@ describe("parseCliArgs", () => {
       offset: 0,
     });
     expect(() => parseCliArgs(["read"])).toThrow(
-      "Specify a tab: pass an ID, -n <index>, or --active."
+      "Specify a tab: pass an ID, an INDEX, or --active."
     );
   });
 
-  it("rejects an empty ID rather than reading the active tab", () => {
-    expect(() => parseCliArgs(["read", ""])).toThrow('Invalid tab ID: ""');
-  });
-
-  it("parses --index as an index reference", () => {
-    const expected = {
+  it("takes a bare number as an INDEX", () => {
+    expect(parseCliArgs(["read", "3"]).command).toEqual({
       name: "read",
       target: { by: "index", index: 3 },
       offset: 0,
-    };
-    expect(parseCliArgs(["read", "--index=3"]).command).toEqual(expected);
-    expect(parseCliArgs(["read", "-n", "3"]).command).toEqual(expected);
+    });
   });
 
-  it("rejects more than one way of naming the tab", () => {
-    for (const args of [
-      ["read", "ID:1:2", "-n", "1"],
-      ["read", "ID:1:2", "--active"],
-      ["read", "-n", "1", "--active"],
-    ]) {
-      expect(() => parseCliArgs(args)).toThrow(
-        "Pass only one of a tab ID, --index, or --active."
+  it("rejects a tab argument that is neither an ID nor an INDEX", () => {
+    // "" must not fall through to the active tab
+    for (const arg of ["", "0", "-1", "1.5", "abc", "1001:2001"]) {
+      expect(() => parseCliArgs(["read", "--", arg])).toThrow(
+        `Invalid tab: "${arg}"`
       );
     }
   });
 
-  it("rejects a non-positive or non-numeric index", () => {
-    expect(() => parseCliArgs(["read", "-n", "0"])).toThrow(
-      'Invalid --index option: "0"'
+  it("rejects a tab together with --active", () => {
+    expect(() => parseCliArgs(["read", "ID:1:2", "--active"])).toThrow(
+      "Pass either a tab ID or INDEX, or --active, not both."
     );
-    expect(() => parseCliArgs(["read", "-n", "abc"])).toThrow(
-      'Invalid --index option: "abc"'
+    expect(() => parseCliArgs(["read", "1", "--active"])).toThrow(
+      "Pass either a tab ID or INDEX, or --active, not both."
     );
   });
 
@@ -96,8 +87,8 @@ describe("parseCliArgs", () => {
     expect(() =>
       parseCliArgs(["read", "--active", "--check-interval=3000"])
     ).toThrow("Option --check-interval does not apply to the read command.");
-    expect(() => parseCliArgs(["-n", "1"])).toThrow(
-      "Option --index does not apply to the MCP server."
+    expect(() => parseCliArgs(["--active"])).toThrow(
+      "Option --active does not apply to the MCP server."
     );
   });
 
@@ -107,7 +98,7 @@ describe("parseCliArgs", () => {
 
   it("rejects excess positional arguments", () => {
     expect(() => parseCliArgs(["read", "ID:1:2", "extra"])).toThrow(
-      "The read command accepts at most one tab ID."
+      "The read command accepts at most one tab."
     );
   });
 });

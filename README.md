@@ -83,7 +83,7 @@ npx @pokutuna/mcp-chrome-tabs read --active
 npx @pokutuna/mcp-chrome-tabs read ID:12345:67890
 
 # Read by INDEX from the list instead
-npx @pokutuna/mcp-chrome-tabs read -n 2
+npx @pokutuna/mcp-chrome-tabs read 2
 
 # Continue reading truncated content
 npx @pokutuna/mcp-chrome-tabs read ID:12345:67890 --offset=20000
@@ -91,8 +91,9 @@ npx @pokutuna/mcp-chrome-tabs read ID:12345:67890 --offset=20000
 
 `list` prints an INDEX column for reading the listing at a glance, but it
 numbers that one listing only -- it shifts when windows are reordered or tabs
-open and close. `read -n <index>` re-resolves the index when it runs, so it can
-land on a different tab than you saw; pass the ID when that matters.
+open and close. `read <INDEX>` re-resolves the index when it runs, so it can
+land on a different tab than you saw; pass the ID when that matters. An
+argument starting with `ID:` is taken as an ID, and a bare number as an INDEX.
 
 Running the command without a subcommand starts the MCP server as before.
 Options apply to the commands shown below; passing one to a command it does
@@ -104,8 +105,7 @@ not apply to is an error.
 
 **Read Options**
 
-- `-n`, `--index` - Read the tab at this INDEX from `list`, resolved when `read` runs
-- `--active` - Read the tab you are looking at now. `read` needs one of an ID, `-n`, or `--active`
+- `--active` - Read the tab you are looking at now. `read` needs one of an ID, an INDEX, or `--active`
 - `--offset` - Start reading content at this character offset (default: 0)
 
 **Content Options** (`read` and the MCP server)

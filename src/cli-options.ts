@@ -56,7 +56,6 @@ const commandOptions: Record<CliCommand["name"], string[]> = {
     "max-content-chars",
     "extraction-timeout",
     "exclude-hosts",
-    "index",
     "active",
     "offset",
   ],
@@ -74,36 +73,24 @@ function assertOptionsApply(
   }
 }
 
-function parseReadTarget(
-  id: string | undefined,
-  indexValue: string | undefined,
-  active: boolean
-): ReadTarget {
-  const given = [id !== undefined, indexValue !== undefined, active];
-  const count = given.filter(Boolean).length;
-  if (count === 0) {
-    throw new Error("Specify a tab: pass an ID, -n <index>, or --active.");
+// A tab argument is an ID when it has the ID: prefix that list prints, and an
+// INDEX when it is a bare number; IDs never take the bare-number form
+function parseReadTarget(arg: string | undefined, active: boolean): ReadTarget {
+  if (arg === undefined && !active) {
+    throw new Error("Specify a tab: pass an ID, an INDEX, or --active.");
   }
-  if (count > 1) {
-    throw new Error("Pass only one of a tab ID, --index, or --active.");
+  if (arg !== undefined && active) {
+    throw new Error("Pass either a tab ID or INDEX, or --active, not both.");
   }
+  if (arg === undefined) return { by: "active" };
 
-  if (id !== undefined) {
-    // An empty ID would otherwise fall through to the active tab
-    if (id === "") {
-      throw new Error('Invalid tab ID: "". Expected ID:<windowId>:<tabId>.');
-    }
-    return { by: "id", id };
+  if (arg.startsWith("ID:")) return { by: "id", id: arg };
+  if (/^\d+$/.test(arg) && Number(arg) >= 1) {
+    return { by: "index", index: Number(arg) };
   }
-  if (active) return { by: "active" };
-
-  const index = Number(indexValue);
-  if (!Number.isInteger(index) || index < 1) {
-    throw new Error(
-      `Invalid --index option: "${indexValue}". Expected a positive integer.`
-    );
-  }
-  return { by: "index", index };
+  throw new Error(
+    `Invalid tab: "${arg}". Pass an ID from list (ID:<windowId>:<tabId>) or an INDEX of 1 or more.`
+  );
 }
 
 export function parseCliArgs(args: string[]): CliOptions {
@@ -141,10 +128,6 @@ export function parseCliArgs(args: string[]): CliOptions {
       offset: {
         type: "string",
         default: "0",
-      },
-      index: {
-        type: "string",
-        short: "n",
       },
       active: {
         type: "boolean",
@@ -203,11 +186,11 @@ export function parseCliArgs(args: string[]): CliOptions {
     command = { name: "list", includeUrl: values["include-url"] };
   } else if (commandName === "read") {
     if (commandArgs.length > 1) {
-      throw new Error("The read command accepts at most one tab ID.");
+      throw new Error("The read command accepts at most one tab.");
     }
     command = {
       name: "read",
-      target: parseReadTarget(commandArgs[0], values.index, values.active),
+      target: parseReadTarget(commandArgs[0], values.active),
       offset: parseIntWithDefault(values.offset, 0, 0),
     };
   } else {

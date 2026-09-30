@@ -19,25 +19,25 @@ mcp-chrome-tabs - Read browser tabs on macOS, as an MCP server or from the CLI
 USAGE:
   mcp-chrome-tabs [OPTIONS]                         Start the MCP server (stdio)
   mcp-chrome-tabs list [OPTIONS]                    List open tabs
-  mcp-chrome-tabs read <ID | -n <index> | --active> [OPTIONS]
+  mcp-chrome-tabs read <ID | INDEX | --active> [OPTIONS]
                                                     Read the main content of a tab
 
 EXAMPLES:
   mcp-chrome-tabs list                              Prints: [INDEX] ID TITLE DOMAIN
   mcp-chrome-tabs read --active                     Read the active tab
   mcp-chrome-tabs read ID:12345:67890               Read the tab with this ID
-  mcp-chrome-tabs read -n 2                         Read the tab at INDEX 2
-  mcp-chrome-tabs read -n 2 --offset=20000          Continue a truncated read
+  mcp-chrome-tabs read 2                            Read the tab at INDEX 2
+  mcp-chrome-tabs read ID:12345:67890 --offset=20000
+                                                    Continue a truncated read
 
-  INDEX numbers one listing only and shifts when windows are reordered or
-  tabs change. Pass the ID to refer to a tab reliably.
+  INDEX numbers one listing only. It is resolved again when read runs and
+  shifts when windows are reordered or tabs change. Pass the ID to refer to
+  a tab reliably.
 
 LIST OPTIONS:
   --include-url               Show the full URL instead of the domain
 
 READ OPTIONS:
-  -n, --index=<index>         Read the tab at this INDEX from list
-                              Resolved when read runs, so it can shift
   --active                    Read the tab you are looking at now
   --offset=<chars>            Start reading at this character offset
                               (default: 0)
