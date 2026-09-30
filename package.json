@@ -36,7 +36,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.1.0",
     "defuddle": "^0.19.4",
     "zod": "^4.6.5"
   },
