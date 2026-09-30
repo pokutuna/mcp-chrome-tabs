@@ -50,6 +50,14 @@ AppleScript の `with timeout` は Apple Event の応答待ちだけを制限し
 
 JXA の実行エラーと JSON の解析エラーは TypeScript 側で処理します。ブラウザー固有の分岐が増える場合は、JXA 内の `try` / `catch` でブラウザー API のエラーを構造化して返す方法も検討できます。
 
+## 未起動のブラウザー
+
+macOS は Apple Event を受け取ったアプリケーションが未起動なら起動します。タブ一覧やページ内容の取得でブラウザーが起動するのは副作用なので、読み取り系の JXA は冒頭で `app.running()` を確認し、未起動なら `<name> is not running.` を投げます。`running()` は Apple Event を送らないので起動しません。`openURL` は URL を開く用途なので起動を許します。
+
+## active tab の印
+
+タブ一覧の各要素には `active` を付けます。読み取りで active tab を指定したときに返るタブと同じものを指し、Chrome は前面から順に見て `about:blank` でない最初の window の `activeTabIndex()`、Safari は前面 window の `currentTab().index()`、Arc は前面 window の `activeTab.id()` で判定します。`listTabs` は window ID 順に安定ソートするため、一覧の先頭が前面 window とは限りません。
+
 ## 除外ホストの判定
 
 ページ内容の取得前に、各ブラウザーの `getTabInfo` でページの JavaScript を実行せずに対象タブの ID と URL を解決し、除外ホストであればその時点で拒否します。続く `getPageContent` には解決済みの ID を渡すため、途中で active tab が変わっても解決したタブを読みます。解決後に除外ホストへ遷移した場合に備え、取得後の URL でも再度判定します。

@@ -32,10 +32,22 @@ function isExcludedHost(url: string, excludeHosts: string[]): boolean {
   );
 }
 
+// Numeric IDs (Chrome, Safari) compare as numbers, others (Arc UUIDs) as text
+function compareIds(a: string, b: string): number {
+  if (/^\d+$/.test(a) && /^\d+$/.test(b)) return Number(a) - Number(b);
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+// Browsers list windows front to back, which changes whenever the user
+// switches windows. Order them by ID (creation order) instead, keeping the tab
+// order within a window, so that an INDEX from `list` still names the same tab
+// after a window switch.
 async function listTabs(opts: McpServerOptions): Promise<Tab[]> {
   const browser = getInterface(opts.browser);
   const tabs = await browser.getTabList(opts.applicationName);
-  return tabs.filter((t) => !isExcludedHost(t.url, opts.excludeHosts));
+  return tabs
+    .filter((t) => !isExcludedHost(t.url, opts.excludeHosts))
+    .sort((a, b) => compareIds(a.windowId, b.windowId));
 }
 
 async function getTab(

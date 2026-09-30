@@ -5,6 +5,8 @@ export type TabRef = { windowId: string; tabId: string };
 export type Tab = TabRef & {
   title: string;
   url: string;
+  // Set by getTabList: the tab that reading the active tab would return
+  active?: boolean;
 };
 
 export type TabContent = {

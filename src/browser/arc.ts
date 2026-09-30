@@ -1,5 +1,5 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
-import { executeJXA, jsonLiteral } from "./osascript.js";
+import { bindApplication, executeJXA, jsonLiteral } from "./osascript.js";
 
 /*
 Arc browser implementation notes
@@ -17,20 +17,24 @@ Arc browser implementation notes
 
 async function getArcTabList(applicationName: string): Promise<Tab[]> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     const out = [];
     for (let i = 0; i < app.windows.length; i++) {
       const windowId = String(app.windows[i].id());
       const w = app.windows.byId(windowId);
+      // The active tab is the front window's, and windows come front to back
+      const activeId = i === 0 ? String(w.activeTab.id()) : null;
       for (let j = 0; j < w.tabs.length; j++) {
         // Read each tab by its ID, so that a tab closed meanwhile does not
         // shift the index and mix two tabs' properties
         const t = w.tabs.byId(String(w.tabs[j].id()));
+        const tabId = String(t.id());
         out.push({
           windowId,
-          tabId: String(t.id()),
+          tabId,
           title: t.title(),
           url: t.url() ?? "",
+          active: tabId === activeId,
         });
       }
     }
@@ -61,7 +65,7 @@ async function getTabInfo(
   tab?: TabRef | null
 ): Promise<Tab> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     ${resolveTargetTab(tab)}
     JSON.stringify({
       windowId: String(targetWindow.id()),
@@ -80,7 +84,7 @@ async function getPageContent(
   tab?: TabRef | null
 ): Promise<TabContent> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     ${resolveTargetTab(tab)}
 
     // As with Chrome, JavaScript in a suspended tab may never return, so the
@@ -115,7 +119,7 @@ async function getPageContent(
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName, { launch: true })}
     const win = app.windows[0];
     win.tabs.push(app.Tab({ url: ${jsonLiteral(url)} }));
     JSON.stringify({

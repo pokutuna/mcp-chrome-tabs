@@ -107,6 +107,27 @@ describe("MCP Server", () => {
   });
 
   describe("list_tabs tool", () => {
+    it("orders windows by ID so that switching windows does not reorder tabs", async () => {
+      // The browser lists the front window first; here window 1002 is in front
+      vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue([
+        mockTabs[2],
+        mockTabs[0],
+        mockTabs[1],
+      ]);
+
+      const result = await client.callTool({
+        name: "list_tabs",
+        arguments: {},
+      });
+
+      const text = (result.content as any)[0].text;
+      expect(text.split("\n").slice(1)).toEqual([
+        "- ID:1001:2001 Example Page (example.com)",
+        "- ID:1001:2002 GitHub (github.com)",
+        "- ID:1002:2003 Test Site (test.com)",
+      ]);
+    });
+
     it("should return all tabs when no domains are excluded", async () => {
       vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
 

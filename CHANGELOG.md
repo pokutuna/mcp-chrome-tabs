@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Errors from osascript no longer include the whole script that was run
 - Safari and Arc are driven by JXA instead of AppleScript, like Chrome
 - Safari: a tab opened by `open_in_new_tab` becomes the current tab, as in Chrome
+- `list_tabs` orders windows by ID (creation order) instead of front to back, so the order no longer changes when the user switches windows
+- Reading tabs reports a browser that is not running instead of launching it; `open_in_new_tab` still launches it
+- Numeric options that are not integers are rejected instead of falling back to the default
 
 ### Fixed
 

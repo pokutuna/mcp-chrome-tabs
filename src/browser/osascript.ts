@@ -9,6 +9,24 @@ export function jsonLiteral(value: unknown): string {
   return JSON.stringify(value);
 }
 
+// JXA that binds `app` to the application. macOS launches an application that
+// is not running as soon as it receives an Apple Event, so a read checks
+// running() first, which sends none, and reports the browser instead.
+export function bindApplication(
+  applicationName: string,
+  { launch = false }: { launch?: boolean } = {}
+): string {
+  const notRunning = jsonLiteral(`${applicationName} is not running.`);
+  return `
+    const app = Application(${jsonLiteral(applicationName)});
+    ${launch ? "" : `if (!app.running()) throw new Error(${notRunning});`}
+  `;
+}
+
+// An error the script raised itself, such as a browser that is not running.
+// Running the script again would raise it again.
+export class ScriptRaisedError extends Error {}
+
 export async function retry<T>(
   fn: () => Promise<T>,
   options?: {
@@ -22,7 +40,9 @@ export async function retry<T>(
       return await fn();
     } catch (error: unknown) {
       // The caller reports the error; logging it here would repeat it
-      if (attempt === maxRetries) throw error;
+      if (attempt === maxRetries || error instanceof ScriptRaisedError) {
+        throw error;
+      }
       await new Promise((resolve) =>
         setTimeout(resolve, retryDelay * Math.pow(2, attempt))
       );
@@ -58,12 +78,14 @@ export function toScriptError(error: unknown, timeoutMs: number): Error {
   // JXA reports errors as "Error: Error: <message> (<code>)"
   const message = match[1].replace(/^(Error: )+/, "").trim();
   const code = Number(message.match(/\((-?\d+)\)$/)?.[1]);
-  // A JXA `throw new Error(...)` of our own is also reported as -2700, so that
-  // hint applies only to the system's message
-  const hint =
-    code === -2700 && !message.includes("can't be found")
-      ? undefined
-      : errorHints[code];
+  // A JXA `throw new Error(...)` of our own is also reported as -2700. Its
+  // code and hint are about a missing application, so both are dropped.
+  if (code === -2700 && !message.includes("can't be found")) {
+    return new ScriptRaisedError(message.replace(/ \(-2700\)$/, ""), {
+      cause: error,
+    });
+  }
+  const hint = errorHints[code];
   return new Error(hint ? `${message}\n${hint}` : message, { cause: error });
 }
 

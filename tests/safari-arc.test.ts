@@ -13,7 +13,7 @@ const { arcBrowser } = await import("../src/browser/arc.js");
 
 function runJXAWithApplication(application: object) {
   executeJXA.mockImplementation(async (script: string) => {
-    const Application = () => application;
+    const Application = () => ({ running: () => true, ...application });
     return String(vm.runInNewContext(script, { Application }));
   });
 }
@@ -42,7 +42,9 @@ describe("safariBrowser JXA callers", () => {
       makeTab(3, "Local", "file:///tmp/a.html"),
     ];
     runJXAWithApplication({
-      windows: windowCollection([{ id: () => 7, tabs: () => tabs }]),
+      windows: windowCollection([
+        { id: () => 7, tabs: () => tabs, currentTab: () => tabs[0] },
+      ]),
     });
 
     await expect(safariBrowser.getTabList("Safari")).resolves.toEqual([
@@ -51,6 +53,7 @@ describe("safariBrowser JXA callers", () => {
         tabId: "1",
         title: 'A "quoted" title',
         url: "https://example.test/?q=あ",
+        active: true,
       },
     ]);
   });
@@ -182,6 +185,7 @@ describe("arcBrowser JXA callers", () => {
         tabId: "t-1",
         title: "Example",
         url: "https://example.test",
+        active: true,
       },
     ]);
   });

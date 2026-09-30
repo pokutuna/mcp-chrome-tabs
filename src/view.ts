@@ -95,8 +95,8 @@ function tableCell(text: string): string {
 const maxTitleWidth = 60;
 
 // Index is ephemeral: it numbers the rows of this one listing and shifts as
-// windows are reordered or tabs open and close. ID is the durable reference,
-// so both are always shown and `read` takes either.
+// tabs open and close. ID is the durable reference, so both are always shown
+// and `read` takes either. A leading * marks the active tab.
 export function formatListForCli(
   tabs: Tab[],
   includeUrl: boolean = false
@@ -104,6 +104,7 @@ export function formatListForCli(
   if (tabs.length === 0) return "No open tabs.";
 
   const rows = tabs.map((tab, i) => ({
+    mark: tab.active ? "*" : " ",
     index: `[${i + 1}]`,
     id: formatTabRef(tab),
     title: truncateToWidth(tableCell(tab.title), maxTitleWidth),
@@ -121,7 +122,7 @@ export function formatListForCli(
   return rows
     .map(
       (r) =>
-        `${" ".repeat(wIndex - displayWidth(r.index))}${r.index}  ` +
+        `${r.mark} ${" ".repeat(wIndex - displayWidth(r.index))}${r.index}  ` +
         `${padCell(r.id, wId)}  ${padCell(r.title, wTitle)}  ${r.locus}`
     )
     .join("\n");

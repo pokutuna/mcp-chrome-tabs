@@ -30,6 +30,30 @@ describe("executeJXA", () => {
     expect(execFile.mock.calls[0][2]).toMatchObject({ timeout: 3000 });
   });
 
+  test("does not retry an error the script raised itself", async () => {
+    execFile.mockImplementation((...args: unknown[]) => {
+      const callback = args.at(-1) as (
+        error: Error,
+        stdout: string,
+        stderr: string
+      ) => void;
+      callback(
+        Object.assign(new Error("Command failed"), {
+          stderr:
+            "execution error: Error: Error: Safari is not running. (-2700)\n",
+        }),
+        "",
+        ""
+      );
+    });
+
+    await expect(executeJXA("script", { retryDelay: 0 })).rejects.toThrow(
+      "Safari is not running."
+    );
+
+    expect(execFile).toHaveBeenCalledTimes(1);
+  });
+
   test("keeps the default retry behavior", async () => {
     execFile
       .mockImplementationOnce((...args: unknown[]) => {
@@ -79,7 +103,7 @@ describe("toScriptError", () => {
     );
   });
 
-  test("adds no hint to a script's own error, which shares the code -2700", () => {
+  test("drops the code and hint from a script's own error, which shares -2700", () => {
     const error = toScriptError(
       execError(
         "execution error: Error: Error: Tabs kept changing while listing them (-2700)\n"
@@ -87,7 +111,7 @@ describe("toScriptError", () => {
       5000
     );
 
-    expect(error.message).toBe("Tabs kept changing while listing them (-2700)");
+    expect(error.message).toBe("Tabs kept changing while listing them");
   });
 
   test("keeps the message as is for an unknown code", () => {

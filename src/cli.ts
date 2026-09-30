@@ -24,6 +24,7 @@ USAGE:
 
 EXAMPLES:
   mcp-chrome-tabs list                              Prints: [INDEX] ID TITLE DOMAIN
+                                                    (* marks the active tab)
   mcp-chrome-tabs read --active                     Read the active tab
   mcp-chrome-tabs read ID:12345:67890               Read the tab with this ID
   mcp-chrome-tabs read 2                            Read the tab at INDEX 2
@@ -31,8 +32,8 @@ EXAMPLES:
                                                     Continue a truncated read
 
   INDEX numbers one listing only. It is resolved again when read runs and
-  shifts when windows are reordered or tabs change. Pass the ID to refer to
-  a tab reliably.
+  shifts when tabs open or close (switching windows does not renumber it).
+  Pass the ID to refer to a tab reliably.
 
 LIST OPTIONS:
   --include-url               Show the full URL instead of the domain

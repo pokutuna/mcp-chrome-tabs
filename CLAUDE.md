@@ -56,7 +56,7 @@ Resources:
 
 CLI commands (read-only, no MCP client needed):
 
-- `list` - List open tabs as `[INDEX] ID TITLE DOMAIN`
+- `list` - List open tabs as `[INDEX] ID TITLE DOMAIN`, `*` marking the active tab
 - `read <ID | INDEX | --active>` - Read a tab's content
 
 ### macOS Requirements

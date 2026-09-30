@@ -70,7 +70,7 @@ The package also provides read-only commands for accessing the same tab data as
 the MCP tools:
 
 ```bash
-# List open tabs as: [INDEX] ID TITLE DOMAIN
+# List open tabs as: [INDEX] ID TITLE DOMAIN (* marks the active tab)
 npx @pokutuna/mcp-chrome-tabs list
 
 # Show the full URL in place of the domain
@@ -90,10 +90,15 @@ npx @pokutuna/mcp-chrome-tabs read ID:12345:67890 --offset=20000
 ```
 
 `list` prints an INDEX column for reading the listing at a glance, but it
-numbers that one listing only -- it shifts when windows are reordered or tabs
-open and close. `read <INDEX>` re-resolves the index when it runs, so it can
-land on a different tab than you saw; pass the ID when that matters. An
-argument starting with `ID:` is taken as an ID, and a bare number as an INDEX.
+numbers that one listing only -- it shifts when tabs open or close. Windows
+are ordered by ID (creation order) rather than front to back, so switching
+windows does not renumber the list. `read <INDEX>` re-resolves the index when
+it runs, so it can land on a different tab than you saw; pass the ID when that
+matters. An argument starting with `ID:` is taken as an ID, and a bare number
+as an INDEX.
+
+Reading refuses a browser that is not running rather than launching it;
+`open_in_new_tab` still launches it.
 
 Running the command without a subcommand starts the MCP server.
 Options apply to the commands shown below; passing one to a command it does

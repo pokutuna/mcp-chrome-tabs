@@ -1,5 +1,5 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
-import { executeJXA, jsonLiteral } from "./osascript.js";
+import { bindApplication, executeJXA, jsonLiteral } from "./osascript.js";
 
 /*
 Why JXA instead of AppleScript:
@@ -22,8 +22,11 @@ const tabsChangedMessage = "Tabs kept changing while listing them";
 
 async function getChromeTabList(applicationName: string): Promise<Tab[]> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     const out = [];
+    // Windows come front to back, so the first active tab that is not blank
+    // is the one reading the active tab would return
+    let activeFound = false;
     for (const w of app.windows()) {
       const windowId = String(w.id());
       // Each property is read for all tabs in one Apple Event, which is far
@@ -43,12 +46,17 @@ async function getChromeTabList(applicationName: string): Promise<Tab[]> {
         if (same) break;
         if (attempt === 2) throw new Error(${jsonLiteral(tabsChangedMessage)});
       }
+      const activeIndex = w.activeTabIndex();
       for (let i = 0; i < ids.length; i++) {
+        const active =
+          !activeFound && i === activeIndex - 1 && urls[i] !== "about:blank";
+        if (active) activeFound = true;
         out.push({
           windowId,
           tabId: String(ids[i]),
           title: titles[i],
           url: urls[i],
+          active,
         });
       }
     }
@@ -89,7 +97,7 @@ async function getTabInfo(
   tab?: TabRef | null
 ): Promise<Tab> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     ${resolveTargetTab(tab)}
     JSON.stringify({
       windowId: String(targetWindow.id()),
@@ -108,7 +116,7 @@ async function getPageContent(
   tab?: TabRef | null
 ): Promise<TabContent> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     ${resolveTargetTab(tab)}
 
     // Chrome's "execute javascript" may hang on suspended tabs. JXA cannot
@@ -132,7 +140,7 @@ async function getPageContent(
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName, { launch: true })}
     const win = app.windows[0];
     const newTab = app.Tab({ url: ${jsonLiteral(url)} });
     win.tabs.push(newTab);

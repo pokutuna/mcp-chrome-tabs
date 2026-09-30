@@ -1,5 +1,5 @@
 import type { BrowserInterface, TabRef, Tab, TabContent } from "./browser.js";
-import { executeJXA, jsonLiteral } from "./osascript.js";
+import { bindApplication, executeJXA, jsonLiteral } from "./osascript.js";
 
 /*
 Safari implementation notes
@@ -15,16 +15,23 @@ Safari implementation notes
 
 async function getSafariTabList(applicationName: string): Promise<Tab[]> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     const out = [];
+    // The active tab is the front window's current tab, and windows come
+    // front to back
+    let front = true;
     for (const w of app.windows()) {
       const windowId = String(w.id());
+      const currentIndex = front ? w.currentTab().index() : 0;
+      front = false;
       for (const t of w.tabs()) {
+        const index = t.index();
         out.push({
           windowId,
-          tabId: String(t.index()),
+          tabId: String(index),
           title: t.name(),
           url: t.url() ?? "",
+          active: index === currentIndex,
         });
       }
     }
@@ -61,7 +68,7 @@ async function getTabInfo(
   tab?: TabRef | null
 ): Promise<Tab> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     ${resolveTargetTab(tab)}
     JSON.stringify({
       windowId: String(targetWindow.id()),
@@ -80,7 +87,7 @@ async function getPageContent(
   tab?: TabRef | null
 ): Promise<TabContent> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName)}
     ${resolveTargetTab(tab)}
 
     // As with Chrome, JavaScript in a suspended tab may never return, so the
@@ -103,7 +110,7 @@ async function getPageContent(
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
   const script = `
-    const app = Application(${jsonLiteral(applicationName)});
+    ${bindApplication(applicationName, { launch: true })}
     const win = app.windows[0];
     const newTab = app.Tab({ url: ${jsonLiteral(url)} });
     win.tabs.push(newTab);

@@ -12,7 +12,7 @@ const { chromeBrowser } = await import("../src/browser/chrome.js");
 
 function runJXAWithApplication(application: object) {
   executeJXA.mockImplementation(async (script: string) => {
-    const Application = () => application;
+    const Application = () => ({ running: () => true, ...application });
     return String(vm.runInNewContext(script, { Application }));
   });
 }
@@ -54,7 +54,7 @@ describe("chromeBrowser JXA callers", () => {
       { id: 43, title: "ignored", url: "chrome://settings" },
     ]);
     runJXAWithApplication({
-      windows: () => [{ id: () => 7, tabs }],
+      windows: () => [{ id: () => 7, tabs, activeTabIndex: () => 2 }],
     });
 
     await expect(chromeBrowser.getTabList("Google Chrome")).resolves.toEqual([
@@ -63,6 +63,7 @@ describe("chromeBrowser JXA callers", () => {
         tabId: "42",
         title: 'A \\ "quoted"\ntitle',
         url: "https://example.test/?q=あ",
+        active: false,
       },
     ]);
     expect(executeJXA).toHaveBeenCalledTimes(1);
@@ -78,12 +79,60 @@ describe("chromeBrowser JXA callers", () => {
     // [B] while the IDs say [A, B]; the second pass sees [B] throughout
     const tabs = makeTabs([a, b], [b]);
     runJXAWithApplication({
-      windows: () => [{ id: () => 7, tabs }],
+      windows: () => [{ id: () => 7, tabs, activeTabIndex: () => 1 }],
     });
 
     await expect(chromeBrowser.getTabList("Google Chrome")).resolves.toEqual([
-      { windowId: "7", tabId: "2", title: "B", url: "https://b.test" },
+      {
+        windowId: "7",
+        tabId: "2",
+        title: "B",
+        url: "https://b.test",
+        active: true,
+      },
     ]);
+  });
+
+  test("marks the active tab of the front window whose active tab is not blank", async () => {
+    const blank = { id: 1, title: "", url: "about:blank" };
+    const a = { id: 2, title: "A", url: "https://a.test" };
+    const b = { id: 3, title: "B", url: "https://b.test" };
+    runJXAWithApplication({
+      windows: () => [
+        { id: () => 7, tabs: makeTabs([blank, a]), activeTabIndex: () => 1 },
+        { id: () => 8, tabs: makeTabs([b]), activeTabIndex: () => 1 },
+      ],
+    });
+
+    await expect(chromeBrowser.getTabList("Google Chrome")).resolves.toEqual([
+      {
+        windowId: "7",
+        tabId: "2",
+        title: "A",
+        url: "https://a.test",
+        active: false,
+      },
+      {
+        windowId: "8",
+        tabId: "3",
+        title: "B",
+        url: "https://b.test",
+        active: true,
+      },
+    ]);
+  });
+
+  test("refuses a browser that is not running without sending it an event", async () => {
+    const windows = vi.fn();
+    runJXAWithApplication({ running: () => false, windows });
+
+    await expect(chromeBrowser.getTabList("Google Chrome")).rejects.toThrow(
+      "Google Chrome is not running."
+    );
+    await expect(chromeBrowser.getTabInfo("Google Chrome")).rejects.toThrow(
+      "Google Chrome is not running."
+    );
+    expect(windows).not.toHaveBeenCalled();
   });
 
   test("gives up when the tabs keep changing", async () => {
@@ -168,6 +217,8 @@ describe("chromeBrowser JXA callers", () => {
   test("opens a URL with special characters and returns the created tab ID", async () => {
     const newTab = makeTab(99, "", "");
     const app = {
+      // Opening a URL is allowed to launch the browser
+      running: () => false,
       windows: [
         {
           id: () => 8,

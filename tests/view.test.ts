@@ -249,8 +249,18 @@ describe("formatListForCli", () => {
     };
 
     expect(formatListForCli([tab])).toBe(
-      `[1]  ID:1:2  ${"あ".repeat(29)}…  example.com`
+      `  [1]  ID:1:2  ${"あ".repeat(29)}…  example.com`
     );
+  });
+
+  it("marks the active tab with a leading *", () => {
+    const lines = formatListForCli([
+      { ...tabs[0], active: false },
+      { ...tabs[1], active: true },
+    ]).split("\n");
+
+    expect(lines[0].startsWith("  [1]")).toBe(true);
+    expect(lines[1].startsWith("* [2]")).toBe(true);
   });
 });
 
@@ -270,7 +280,7 @@ describe("terminal escaping", () => {
     };
 
     expect(formatListForCli([tab])).toBe(
-      "[1]  ID:1:2  evil\\x1b[2J second line  example.com"
+      "  [1]  ID:1:2  evil\\x1b[2J second line  example.com"
     );
   });
 });
