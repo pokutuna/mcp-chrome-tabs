@@ -5,7 +5,12 @@ import type { McpServerOptions } from "./mcp.js";
 export type CliCommand =
   | { name: "serve" }
   | { name: "list"; includeUrl: boolean }
-  | { name: "read"; id?: string; index?: number; offset: number };
+  | { name: "read"; target: ReadTarget; offset: number };
+
+// The read command never falls back to the active tab; reading it must be
+// asked for with --active, since it is the tab the user is looking at now
+export type ReadTarget =
+  { by: "id"; id: string } | { by: "index"; index: number } | { by: "active" };
 
 export type CliOptions = {
   server: McpServerOptions;
@@ -52,6 +57,7 @@ const commandOptions: Record<CliCommand["name"], string[]> = {
     "extraction-timeout",
     "exclude-hosts",
     "index",
+    "active",
     "offset",
   ],
 };
@@ -66,6 +72,38 @@ function assertOptionsApply(
       command === "serve" ? "the MCP server" : `the ${command} command`;
     throw new Error(`Option --${name} does not apply to ${target}.`);
   }
+}
+
+function parseReadTarget(
+  id: string | undefined,
+  indexValue: string | undefined,
+  active: boolean
+): ReadTarget {
+  const given = [id !== undefined, indexValue !== undefined, active];
+  const count = given.filter(Boolean).length;
+  if (count === 0) {
+    throw new Error("Specify a tab: pass an ID, -n <index>, or --active.");
+  }
+  if (count > 1) {
+    throw new Error("Pass only one of a tab ID, --index, or --active.");
+  }
+
+  if (id !== undefined) {
+    // An empty ID would otherwise fall through to the active tab
+    if (id === "") {
+      throw new Error('Invalid tab ID: "". Expected ID:<windowId>:<tabId>.');
+    }
+    return { by: "id", id };
+  }
+  if (active) return { by: "active" };
+
+  const index = Number(indexValue);
+  if (!Number.isInteger(index) || index < 1) {
+    throw new Error(
+      `Invalid --index option: "${indexValue}". Expected a positive integer.`
+    );
+  }
+  return { by: "index", index };
 }
 
 export function parseCliArgs(args: string[]): CliOptions {
@@ -108,6 +146,10 @@ export function parseCliArgs(args: string[]): CliOptions {
         type: "string",
         short: "n",
       },
+      active: {
+        type: "boolean",
+        default: false,
+      },
       help: {
         type: "boolean",
         short: "h",
@@ -140,6 +182,16 @@ export function parseCliArgs(args: string[]): CliOptions {
     ),
   };
 
+  // Help and version need no valid command line beyond themselves
+  if (values.help || values.version) {
+    return {
+      server,
+      command: { name: "serve" },
+      help: values.help,
+      version: values.version,
+    };
+  }
+
   const [commandName, ...commandArgs] = positionals;
   let command: CliCommand;
   if (commandName === undefined) {
@@ -153,35 +205,19 @@ export function parseCliArgs(args: string[]): CliOptions {
     if (commandArgs.length > 1) {
       throw new Error("The read command accepts at most one tab ID.");
     }
-    const indexValue = values.index;
-    let index: number | undefined;
-    if (indexValue !== undefined) {
-      if (commandArgs[0] !== undefined) {
-        throw new Error("Pass either a tab ID or --index, not both.");
-      }
-      index = Number(indexValue);
-      if (!Number.isInteger(index) || index < 1) {
-        throw new Error(
-          `Invalid --index option: "${indexValue}". Expected a positive integer.`
-        );
-      }
-    }
     command = {
       name: "read",
-      id: commandArgs[0],
-      index,
+      target: parseReadTarget(commandArgs[0], values.index, values.active),
       offset: parseIntWithDefault(values.offset, 0, 0),
     };
   } else {
     throw new Error(`Unknown command: ${commandName}`);
   }
 
-  if (!values.help && !values.version) {
-    const passed = new Set(
-      tokens.flatMap((t) => (t.kind === "option" ? [t.name] : []))
-    );
-    assertOptionsApply(command.name, passed);
-  }
+  const passed = new Set(
+    tokens.flatMap((t) => (t.kind === "option" ? [t.name] : []))
+  );
+  assertOptionsApply(command.name, passed);
 
   return {
     server,

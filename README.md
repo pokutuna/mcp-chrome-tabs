@@ -77,7 +77,7 @@ npx @pokutuna/mcp-chrome-tabs list
 npx @pokutuna/mcp-chrome-tabs list --include-url
 
 # Read the active tab
-npx @pokutuna/mcp-chrome-tabs read
+npx @pokutuna/mcp-chrome-tabs read --active
 
 # Read a specific tab from an ID returned by list
 npx @pokutuna/mcp-chrome-tabs read ID:12345:67890
@@ -105,6 +105,7 @@ not apply to is an error.
 **Read Options**
 
 - `-n`, `--index` - Read the tab at this INDEX from `list`, resolved when `read` runs
+- `--active` - Read the tab you are looking at now. `read` needs one of an ID, `-n`, or `--active`
 - `--offset` - Start reading content at this character offset (default: 0)
 
 **Content Options** (`read` and the MCP server)
