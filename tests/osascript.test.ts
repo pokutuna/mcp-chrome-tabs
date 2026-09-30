@@ -79,6 +79,17 @@ describe("toScriptError", () => {
     );
   });
 
+  test("adds no hint to a script's own error, which shares the code -2700", () => {
+    const error = toScriptError(
+      execError(
+        "execution error: Error: Error: Tabs kept changing while listing them (-2700)\n"
+      ),
+      5000
+    );
+
+    expect(error.message).toBe("Tabs kept changing while listing them (-2700)");
+  });
+
   test("keeps the message as is for an unknown code", () => {
     const error = toScriptError(
       execError("execution error: Error: Something else. (-9999)\n"),

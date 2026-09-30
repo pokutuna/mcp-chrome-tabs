@@ -17,18 +17,38 @@ bridging, so we rely on this behavior documented at
 https://www.deanishe.net/snippet/multiple-app-instances/
 */
 
+// Tabs that changed under the listing before it was read consistently
+const tabsChangedMessage = "Tabs kept changing while listing them";
+
 async function getChromeTabList(applicationName: string): Promise<Tab[]> {
   const script = `
     const app = Application(${jsonLiteral(applicationName)});
     const out = [];
     for (const w of app.windows()) {
       const windowId = String(w.id());
-      for (const t of w.tabs()) {
+      // Each property is read for all tabs in one Apple Event, which is far
+      // fewer round trips than reading each tab. The reads are still separate
+      // events, so a tab closed or moved in between would pair one tab's title
+      // with another's URL. The IDs are read again afterwards; a difference
+      // means the lists are not from the same tab set, so read them again.
+      let ids, titles, urls;
+      for (let attempt = 0; ; attempt++) {
+        ids = w.tabs.id();
+        titles = w.tabs.title();
+        urls = w.tabs.url();
+        const idsAfter = w.tabs.id();
+        const same =
+          idsAfter.length === ids.length &&
+          idsAfter.every((id, i) => id === ids[i]);
+        if (same) break;
+        if (attempt === 2) throw new Error(${jsonLiteral(tabsChangedMessage)});
+      }
+      for (let i = 0; i < ids.length; i++) {
         out.push({
           windowId,
-          tabId: String(t.id()),
-          title: t.title(),
-          url: t.url(),
+          tabId: String(ids[i]),
+          title: titles[i],
+          url: urls[i],
         });
       }
     }

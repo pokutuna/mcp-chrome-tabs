@@ -58,7 +58,12 @@ export function toScriptError(error: unknown, timeoutMs: number): Error {
   // JXA reports errors as "Error: Error: <message> (<code>)"
   const message = match[1].replace(/^(Error: )+/, "").trim();
   const code = Number(message.match(/\((-?\d+)\)$/)?.[1]);
-  const hint = errorHints[code];
+  // A JXA `throw new Error(...)` of our own is also reported as -2700, so that
+  // hint applies only to the system's message
+  const hint =
+    code === -2700 && !message.includes("can't be found")
+      ? undefined
+      : errorHints[code];
   return new Error(hint ? `${message}\n${hint}` : message, { cause: error });
 }
 

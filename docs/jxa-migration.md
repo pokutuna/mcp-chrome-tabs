@@ -38,7 +38,7 @@ Arc は `app.windows()` や `w.tabs()` が返す要素参照と、`activeTab()` 
 
 ## 実装方針
 
-各ブラウザーの JXA は、window と tab を走査して `{ windowId, tabId, title, url }` の配列を作り、`JSON.stringify` で返します。TypeScript 側で `JSON.parse` して `Tab[]` に変換します。アプリケーション名は JSON 文字列リテラルとして JXA に埋め込み、入力値によるスクリプト構文の破壊を防ぎます。
+各ブラウザーの JXA は、window と tab を走査して `{ windowId, tabId, title, url }` の配列を作り、`JSON.stringify` で返します。Chrome では `w.tabs.id()` のように window 内の全タブのプロパティを 1 回の Apple Event で取得します。タブごとに取得するよりイベント数が大幅に減り、18 タブの実測で `osascript` の所要時間は 0.62 秒から 0.24 秒になりました。ただし id、title、url の取得は別々のイベントなので、その間にタブが閉じたり移動したりすると、別のタブの title と url が組になります。これを防ぐため、3 つを取得した後にもう一度 id の列を取得し、最初の列と一致しなければその window を読み直します。3 回続けて一致しなければエラーにし、`executeJXA` のリトライに任せます。TypeScript 側で `JSON.parse` して `Tab[]` に変換します。アプリケーション名は JSON 文字列リテラルとして JXA に埋め込み、入力値によるスクリプト構文の破壊を防ぎます。
 
 Chrome では `app.windows.byId(Number(windowId))` と `win.tabs.byId(Number(tabId))` を使います。Safari では window ID を使って window を検索し、tab は 1-origin の index を 0-origin の配列位置に変換して参照します。Arc では window と tab の UUID を文字列のまま扱います。
 
