@@ -239,6 +239,19 @@ describe("formatListForCli", () => {
   it("reports when no tabs are open", () => {
     expect(formatListForCli([])).toBe("No open tabs.");
   });
+
+  it("cuts a long title so that it does not wrap the row", () => {
+    const tab: Tab = {
+      windowId: "1",
+      tabId: "2",
+      title: "あ".repeat(40),
+      url: "https://example.com/",
+    };
+
+    expect(formatListForCli([tab])).toBe(
+      `[1]  ID:1:2  ${"あ".repeat(29)}…  example.com`
+    );
+  });
 });
 
 describe("terminal escaping", () => {

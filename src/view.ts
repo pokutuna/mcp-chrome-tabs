@@ -56,6 +56,20 @@ function displayWidth(text: string): number {
   return width;
 }
 
+// Cut text to fit in width terminal cells, marking the cut with an ellipsis
+function truncateToWidth(text: string, width: number): string {
+  if (displayWidth(text) <= width) return text;
+  let out = "";
+  let used = 0;
+  for (const char of text) {
+    const w = displayWidth(char);
+    if (used + w > width - 1) break;
+    out += char;
+    used += w;
+  }
+  return out + "…";
+}
+
 function padCell(text: string, width: number): string {
   return text + " ".repeat(Math.max(0, width - displayWidth(text)));
 }
@@ -77,6 +91,9 @@ function tableCell(text: string): string {
   return escapeForTerminal(text.replace(/[\t\n\r]+/g, " "));
 }
 
+// Long titles would wrap and break the columns, so they are cut to this width
+const maxTitleWidth = 60;
+
 // Index is ephemeral: it numbers the rows of this one listing and shifts as
 // windows are reordered or tabs open and close. ID is the durable reference,
 // so both are always shown and `read` takes either.
@@ -89,7 +106,7 @@ export function formatListForCli(
   const rows = tabs.map((tab, i) => ({
     index: `[${i + 1}]`,
     id: formatTabRef(tab),
-    title: tableCell(tab.title),
+    title: truncateToWidth(tableCell(tab.title), maxTitleWidth),
     locus: tableCell(includeUrl ? tab.url : getDomain(tab.url)),
   }));
 
