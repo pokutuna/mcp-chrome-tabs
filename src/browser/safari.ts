@@ -4,7 +4,11 @@ import { executeJXA, jsonLiteral } from "./osascript.js";
 /*
 Safari implementation notes
 - Safari tabs have no ID. tabId is the tab's 1-based index in its window, so
-  it shifts when tabs before it are closed or moved.
+  it shifts when tabs before it are closed or moved. This also applies between
+  getTabInfo and getPageContent: if the order changes in between, the page
+  read may be another tab, and an excluded host is then caught only by the
+  check after reading. Without a tab ID this cannot be ruled out, and it is
+  accepted while Safari support is experimental.
 - The active tab is the front window's current tab.
 - Reading page content requires Develop > Allow JavaScript from Apple Events.
 */
