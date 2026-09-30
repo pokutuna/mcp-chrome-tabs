@@ -116,9 +116,12 @@ describe("safariBrowser JXA callers", () => {
   test("opens a URL and returns the new tab's index", async () => {
     const newTab = makeTab(4, "", "");
     const push = vi.fn();
-    const win: Record<string, unknown> = { id: () => 8, tabs: { push } };
+    const win: { id: () => number; tabs: object; currentTab?: object } = {
+      id: () => 8,
+      tabs: { push },
+    };
     runJXAWithApplication({
-      windows: windowCollection([win as { id: () => unknown }]),
+      windows: windowCollection([win]),
       Tab: (properties: { url: string }) => {
         expect(properties.url).toBe('https://example.test/?q="あ"');
         return newTab;

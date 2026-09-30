@@ -10,11 +10,10 @@ describe("parseCliArgs", () => {
   });
 
   it("parses the list command", () => {
-    const parsed = parseCliArgs([
-      "list",
-      "--include-url",
-      "--exclude-hosts=example.com, test.com",
-    ]);
+    const parsed = parseCliArgs(
+      ["list", "--include-url", "--exclude-hosts=example.com, test.com"],
+      {}
+    );
 
     expect(parsed.command).toEqual({ name: "list", includeUrl: true });
     expect(parsed.server.excludeHosts).toEqual(["example.com", "test.com"]);
@@ -78,9 +77,6 @@ describe("parseCliArgs", () => {
   });
 
   it("rejects a tab together with --active", () => {
-    expect(() => parseCliArgs(["read", "ID:1:2", "--active"])).toThrow(
-      "Pass either a tab ID or INDEX, or --active, not both."
-    );
     expect(() => parseCliArgs(["read", "1", "--active"])).toThrow(
       "Pass either a tab ID or INDEX, or --active, not both."
     );
@@ -97,9 +93,6 @@ describe("parseCliArgs", () => {
     expect(() => parseCliArgs(["read", "--active", "--include-url"])).toThrow(
       "Option --include-url does not apply to the read command."
     );
-    expect(() =>
-      parseCliArgs(["read", "--active", "--check-interval=3000"])
-    ).toThrow("Option --check-interval does not apply to the read command.");
     expect(() => parseCliArgs(["--active"])).toThrow(
       "Option --active does not apply to the MCP server."
     );

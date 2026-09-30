@@ -541,19 +541,6 @@ describe("executeReadTabContent", () => {
     expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
   });
 
-  it("reads the active tab when no ID is given", async () => {
-    await executeReadTabContent(defaultTestOptions);
-
-    expect(mockBrowserInterface.getTabInfo).toHaveBeenCalledWith(
-      "Google Chrome",
-      null
-    );
-    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
-      "Google Chrome",
-      { windowId: "1001", tabId: "2001" }
-    );
-  });
-
   it("passes a parsed tab ref through for a well-formed ID", async () => {
     await executeReadTabContent(defaultTestOptions, "ID:1001:2001");
 

@@ -103,12 +103,11 @@ async function getPageContent(
     JSON.stringify(result);
   `;
 
-  const scriptResult = await executeJXA(script, {
+  const result = await executeJXA(script, {
     timeout: 3 * 1000,
     maxRetries: 0,
   });
-  const parsed = JSON.parse(scriptResult) as TabContent;
-  return parsed;
+  return JSON.parse(result) as TabContent;
 }
 
 async function openURL(applicationName: string, url: string): Promise<TabRef> {
