@@ -18,7 +18,7 @@ Model Context Protocol (MCP) server that provides direct access to your browser'
 > [!IMPORTANT]  
 > **macOS only** - This MCP server uses AppleScript and only works on macOS.
 
-- **Node.js** 20 or newer
+- **Node.js** 22 or newer
 - **MCP Client** such as Claude Desktop, Claude Code, or any MCP-compatible client
 - **macOS** only (uses AppleScript for browser automation)
 

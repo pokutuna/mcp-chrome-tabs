@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: Require Node.js 22 or newer (Node.js 20 reached end-of-life)
+
 ## [0.8.3] - 2026-07-16
 
 ### Added

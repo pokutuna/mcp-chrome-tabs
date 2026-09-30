@@ -58,7 +58,7 @@ This project is macOS-only and requires:
 
 - "Allow JavaScript from Apple Events" enabled in Chrome
 - AppleScript permissions for browser automation
-- Node.js 20 or newer
+- Node.js 22 or newer
 
 ### Testing Structure
 
