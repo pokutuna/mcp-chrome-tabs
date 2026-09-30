@@ -123,6 +123,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Run by hand in a terminal, the server just waits on stdin and looks hung
+  if (process.stdin.isTTY) {
+    console.error(
+      "Started the MCP server on stdio. Press Ctrl+C to stop; run with --help for the list and read commands."
+    );
+  }
+
   // serveStdio picks the protocol era from the opening exchange, so the same
   // factory serves both 2025-era and 2026-07-28 clients
   const handle = serveStdio(() => createMcpServer(cli.server));
