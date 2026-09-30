@@ -20,16 +20,16 @@ describe("parseCliArgs", () => {
     expect(parsed.server.excludeHosts).toEqual(["example.com", "test.com"]);
   });
 
-  it("parses the get command with a tab ID and pagination", () => {
+  it("parses the read command with a tab ID and pagination", () => {
     const parsed = parseCliArgs([
-      "get",
+      "read",
       "ID:1001:2001",
       "--start-index=500",
       "--max-content-chars=1000",
     ]);
 
     expect(parsed.command).toEqual({
-      name: "get",
+      name: "read",
       id: "ID:1001:2001",
       index: undefined,
       startIndex: 500,
@@ -37,9 +37,9 @@ describe("parseCliArgs", () => {
     expect(parsed.server.maxContentChars).toBe(1000);
   });
 
-  it("reads the active tab when get has no ID", () => {
-    expect(parseCliArgs(["get"]).command).toEqual({
-      name: "get",
+  it("reads the active tab when read has no ID", () => {
+    expect(parseCliArgs(["read"]).command).toEqual({
+      name: "read",
       id: undefined,
       index: undefined,
       startIndex: 0,
@@ -47,14 +47,14 @@ describe("parseCliArgs", () => {
   });
 
   it("parses --index as an index reference", () => {
-    expect(parseCliArgs(["get", "--index=3"]).command).toEqual({
-      name: "get",
+    expect(parseCliArgs(["read", "--index=3"]).command).toEqual({
+      name: "read",
       id: undefined,
       index: 3,
       startIndex: 0,
     });
-    expect(parseCliArgs(["get", "-n", "3"]).command).toEqual({
-      name: "get",
+    expect(parseCliArgs(["read", "-n", "3"]).command).toEqual({
+      name: "read",
       id: undefined,
       index: 3,
       startIndex: 0,
@@ -62,16 +62,16 @@ describe("parseCliArgs", () => {
   });
 
   it("rejects an ID and --index together", () => {
-    expect(() => parseCliArgs(["get", "ID:1:2", "-n", "1"])).toThrow(
+    expect(() => parseCliArgs(["read", "ID:1:2", "-n", "1"])).toThrow(
       "Pass either a tab ID or --index, not both."
     );
   });
 
   it("rejects a non-positive or non-numeric index", () => {
-    expect(() => parseCliArgs(["get", "-n", "0"])).toThrow(
+    expect(() => parseCliArgs(["read", "-n", "0"])).toThrow(
       'Invalid --index option: "0"'
     );
-    expect(() => parseCliArgs(["get", "-n", "abc"])).toThrow(
+    expect(() => parseCliArgs(["read", "-n", "abc"])).toThrow(
       'Invalid --index option: "abc"'
     );
   });
@@ -81,8 +81,8 @@ describe("parseCliArgs", () => {
   });
 
   it("rejects excess positional arguments", () => {
-    expect(() => parseCliArgs(["get", "ID:1:2", "extra"])).toThrow(
-      "The get command accepts at most one tab ID."
+    expect(() => parseCliArgs(["read", "ID:1:2", "extra"])).toThrow(
+      "The read command accepts at most one tab ID."
     );
   });
 });

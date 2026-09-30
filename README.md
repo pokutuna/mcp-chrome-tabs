@@ -77,21 +77,21 @@ npx @pokutuna/mcp-chrome-tabs list
 npx @pokutuna/mcp-chrome-tabs list --include-url
 
 # Read the active tab
-npx @pokutuna/mcp-chrome-tabs get
+npx @pokutuna/mcp-chrome-tabs read
 
 # Read a specific tab from an ID returned by list
-npx @pokutuna/mcp-chrome-tabs get ID:12345:67890
+npx @pokutuna/mcp-chrome-tabs read ID:12345:67890
 
 # Read by INDEX from the list instead
-npx @pokutuna/mcp-chrome-tabs get -n 2
+npx @pokutuna/mcp-chrome-tabs read -n 2
 
 # Continue reading truncated content
-npx @pokutuna/mcp-chrome-tabs get ID:12345:67890 --start-index=20000
+npx @pokutuna/mcp-chrome-tabs read ID:12345:67890 --start-index=20000
 ```
 
 `list` prints an INDEX column for reading the listing at a glance, but it
 numbers that one listing only -- it shifts when windows are reordered or tabs
-open and close. `get -n <index>` re-resolves the index when it runs, so it can
+open and close. `read -n <index>` re-resolves the index when it runs, so it can
 land on a different tab than you saw; pass the ID when that matters.
 
 Running the command without a subcommand starts the MCP server as before. The

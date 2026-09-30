@@ -18,14 +18,14 @@ MCP Chrome Tabs Server
 USAGE:
   mcp-chrome-tabs [OPTIONS]
   mcp-chrome-tabs list [--include-url] [OPTIONS]
-  mcp-chrome-tabs get [ID | -n <index>] [--start-index=<chars>] [OPTIONS]
+  mcp-chrome-tabs read [ID | -n <index>] [--start-index=<chars>] [OPTIONS]
 
 COMMANDS:
   list                        List open tabs as: [INDEX] ID TITLE DOMAIN
                               INDEX numbers this listing only and shifts when
                               windows are reordered or tabs change; pass the ID
                               to refer to a tab reliably.
-  get [ID]                    Get readable content from a tab
+  read [ID]                   Read the main content of a tab
                               (default: active tab)
                               Takes an ID from list, or -n <index>.
 
@@ -35,7 +35,7 @@ COMMAND OPTIONS:
 
   -n, --index=<index>         Read the tab at this INDEX from list
                               Resolved against the tab list at the time
-                              get runs, so it can shift; prefer the ID
+                              read runs, so it can shift; prefer the ID
                               when it matters.
 
   --start-index=<chars>       Start reading content at this character index
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (cli.command.name === "get") {
+  if (cli.command.name === "read") {
     const { id, index, startIndex } = cli.command;
     console.log(
       index !== undefined

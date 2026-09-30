@@ -5,7 +5,7 @@ import type { McpServerOptions } from "./mcp.js";
 export type CliCommand =
   | { name: "serve" }
   | { name: "list"; includeUrl: boolean }
-  | { name: "get"; id?: string; index?: number; startIndex: number };
+  | { name: "read"; id?: string; index?: number; startIndex: number };
 
 export type CliOptions = {
   server: McpServerOptions;
@@ -113,9 +113,9 @@ export function parseCliArgs(args: string[]): CliOptions {
       throw new Error("The list command does not accept positional arguments.");
     }
     command = { name: "list", includeUrl: values["include-url"] };
-  } else if (commandName === "get") {
+  } else if (commandName === "read") {
     if (commandArgs.length > 1) {
-      throw new Error("The get command accepts at most one tab ID.");
+      throw new Error("The read command accepts at most one tab ID.");
     }
     const indexValue = values.index;
     let index: number | undefined;
@@ -131,7 +131,7 @@ export function parseCliArgs(args: string[]): CliOptions {
       }
     }
     command = {
-      name: "get",
+      name: "read",
       id: commandArgs[0],
       index,
       startIndex: parseIntWithDefault(values["start-index"], 0, 0),
