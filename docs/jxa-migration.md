@@ -28,7 +28,7 @@ JXA には、次の実装上の利点もあります。
 
 Safari の `tabId` はタブの位置を表す値です。タブを閉じると後続タブの index が変わるため、取得済みの `TabRef` が別のタブを指す可能性があります。Safari の window には ID がありますが、tab には Chrome や Arc のような固有 ID がありません。このため、Safari では Chrome のような `tabs.byId(...)` による参照はできず、index で参照します。
 
-Arc の window と tab は UUID です。active tab を直接操作する方法は環境によって失敗するため、現在の実装は先に front window と active tab の ID を解決し、ID 指定で操作します。`make new tab` の戻り値から tab ID を取得できないため、新規タブの参照には active tab の ID を使っています。Arc の `execute javascript` の戻り値は文字列としてラップまたはエスケープされる場合があり、必要に応じて `JSON.parse` で復元します。JXA 版でも同じ復元処理を残していますが、JXA から呼んだ場合の戻り値形式は実機で未検証です。
+Arc の window と tab は主に UUID です。active tab を直接操作する方法は環境によって失敗するため、現在の実装は先に front window と active tab の ID を解決し、ID 指定で操作します。`make new tab` の戻り値から tab ID を取得できないため、新規タブの参照には active tab の ID を使っています。Arc の `execute javascript` の戻り値は文字列としてラップまたはエスケープされる場合があり、必要に応じて `JSON.parse` で復元します。JXA 版でも同じ復元処理を残していますが、JXA から呼んだ場合の戻り値形式は実機で未検証です。
 
 ## 移行時の実装方針
 
@@ -52,7 +52,9 @@ JXA の実行エラーと JSON の解析エラーは TypeScript 側で処理し�
 
 - Chrome: E2E で確認済み。
 - Safari: ローカルページを開き、タブ一覧、`getTabInfo`、`getPageContent`、除外ホストの拒否、`openURL` 後の current tab を確認済み。
-- Arc: 未確認。タブ一覧の UUID、active tab の解決、`execute` の戻り値形式、`openURL` の戻り値を実機で確認する必要があります。
+- Arc: ローカルページを開き、タブ一覧、`getTabInfo`、`getPageContent`、除外ホストの拒否、`openURL` 後の active tab を確認済み。`execute` の戻り値は JXA でもそのまま HTML でした。
+
+Arc は `app.windows()` や `w.tabs()` が返す要素参照と、`activeTab()` の呼び出しが返すタブを解決できず、-1700（型を変換できない）になります。このため window と tab は index か `byId` で参照し、active tab は `w.activeTab.id()` のようにプロパティとして参照します。Arc の tab ID は多くが UUID ですが、短い英小文字の ID を持つタブもあります。
 
 ## テスト
 

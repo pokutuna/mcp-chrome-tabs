@@ -138,14 +138,24 @@ describe("arcBrowser JXA callers", () => {
     return { id: () => id, title: () => title, url: () => url };
   }
 
+  // Arc cannot resolve the references that windows(), tabs() or activeTab()
+  // return, so the collections here can only be indexed or looked up by ID,
+  // and calling activeTab fails
+  function elements<E extends { id: () => string }>(items: E[]) {
+    return {
+      ...items,
+      length: items.length,
+      byId: (id: string) => items.find((item) => item.id() === id),
+    };
+  }
+
   function makeWindow(id: string, tabs: ReturnType<typeof makeTab>[]) {
     return {
       id: () => id,
-      activeTab: () => tabs[0],
-      tabs: Object.assign(() => tabs, {
-        byId: (tabId: string) => tabs.find((t) => t.id() === tabId),
-        push: vi.fn(),
-      }),
+      activeTab: Object.assign(() => {
+        throw new Error("Can't convert types. (-1700)");
+      }, tabs[0]),
+      tabs: { ...elements(tabs), push: vi.fn() },
     };
   }
 
@@ -155,7 +165,7 @@ describe("arcBrowser JXA callers", () => {
 
   test("lists HTTP tabs by their UUIDs", async () => {
     runJXAWithApplication({
-      windows: windowCollection([
+      windows: elements([
         makeWindow("w-1", [
           makeTab("t-1", "Example", "https://example.test"),
           makeTab("t-2", "Settings", "arc://settings"),
@@ -179,7 +189,7 @@ describe("arcBrowser JXA callers", () => {
       tab === active ? JSON.stringify("<p><active</p>") : "<other>"
     );
     runJXAWithApplication({
-      windows: windowCollection([makeWindow("w-1", [active])]),
+      windows: elements([makeWindow("w-1", [active])]),
       execute,
     });
 
@@ -197,7 +207,7 @@ describe("arcBrowser JXA callers", () => {
   test("resolves a tab by ID without running JavaScript in it", async () => {
     const execute = vi.fn();
     runJXAWithApplication({
-      windows: windowCollection([
+      windows: elements([
         makeWindow("w-1", [
           makeTab("t-1", "First", "https://first.test"),
           makeTab("t-2", "Second", "https://second.test"),
@@ -215,5 +225,23 @@ describe("arcBrowser JXA callers", () => {
       url: "https://second.test",
     });
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  test("opens a URL and returns the active tab, which is the new one", async () => {
+    const newTab = makeTab("t-9", "", "");
+    const win = makeWindow("w-1", [newTab]);
+    const created = {};
+    runJXAWithApplication({
+      windows: elements([win]),
+      Tab: (properties: { url: string }) => {
+        expect(properties.url).toBe('https://example.test/?q="あ"');
+        return created;
+      },
+    });
+
+    await expect(
+      arcBrowser.openURL("Arc", 'https://example.test/?q="あ"')
+    ).resolves.toEqual({ windowId: "w-1", tabId: "t-9" });
+    expect(win.tabs.push).toHaveBeenCalledWith(created);
   });
 });

@@ -5,6 +5,10 @@ import { executeJXA, jsonLiteral } from "./osascript.js";
 Arc browser implementation notes
 - Tab/Window IDs are UUIDs (unlike Chrome's numeric IDs)
 - The return value of "execute javascript" may be wrapped in "..." and escaped (e.g., <), so decode it with JSON.parse
+- Element references returned by windows() or tabs(), and the tab returned by
+  calling activeTab(), cannot be resolved by Arc (error -1700). Windows and
+  tabs are reached by index or by ID instead, and the active tab through the
+  activeTab property.
 - Operating on the active tab directly can fail depending on the environment,
   so the active tab is first resolved to its IDs and then looked up by ID
 - The ID of a tab created by "make new tab" cannot be read, so openURL
@@ -15,9 +19,13 @@ async function getArcTabList(applicationName: string): Promise<Tab[]> {
   const script = `
     const app = Application(${jsonLiteral(applicationName)});
     const out = [];
-    for (const w of app.windows()) {
-      const windowId = String(w.id());
-      for (const t of w.tabs()) {
+    for (let i = 0; i < app.windows.length; i++) {
+      const windowId = String(app.windows[i].id());
+      const w = app.windows.byId(windowId);
+      for (let j = 0; j < w.tabs.length; j++) {
+        // Read each tab by its ID, so that a tab closed meanwhile does not
+        // shift the index and mix two tabs' properties
+        const t = w.tabs.byId(String(w.tabs[j].id()));
         out.push({
           windowId,
           tabId: String(t.id()),
@@ -41,7 +49,7 @@ function resolveTargetTab(tab?: TabRef | null): string {
     let target = ${tab ? jsonLiteral(tab) : "null"};
     if (!target) {
       const front = app.windows[0];
-      target = { windowId: front.id(), tabId: front.activeTab().id() };
+      target = { windowId: front.id(), tabId: front.activeTab.id() };
     }
     const targetWindow = app.windows.byId(String(target.windowId));
     const targetTab = targetWindow.tabs.byId(String(target.tabId));
@@ -112,7 +120,7 @@ async function openURL(applicationName: string, url: string): Promise<TabRef> {
     win.tabs.push(app.Tab({ url: ${jsonLiteral(url)} }));
     JSON.stringify({
       windowId: String(win.id()),
-      tabId: String(win.activeTab().id()),
+      tabId: String(win.activeTab.id()),
     });
   `;
 
