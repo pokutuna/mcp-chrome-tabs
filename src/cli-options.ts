@@ -33,8 +33,43 @@ function parseIntWithDefault(
   return parsed;
 }
 
+const browserOptions = ["application-name", "experimental-browser"];
+
+// Options that take effect for each command; anything else passed alongside
+// the command is rejected rather than silently ignored
+const commandOptions: Record<CliCommand["name"], string[]> = {
+  serve: [
+    ...browserOptions,
+    "max-content-chars",
+    "extraction-timeout",
+    "exclude-hosts",
+    "check-interval",
+  ],
+  list: [...browserOptions, "exclude-hosts", "include-url"],
+  read: [
+    ...browserOptions,
+    "max-content-chars",
+    "extraction-timeout",
+    "exclude-hosts",
+    "index",
+    "offset",
+  ],
+};
+
+function assertOptionsApply(
+  command: CliCommand["name"],
+  passed: Set<string>
+): void {
+  for (const name of passed) {
+    if (commandOptions[command].includes(name)) continue;
+    const target =
+      command === "serve" ? "the MCP server" : `the ${command} command`;
+    throw new Error(`Option --${name} does not apply to ${target}.`);
+  }
+}
+
 export function parseCliArgs(args: string[]): CliOptions {
-  const { values, positionals } = parseArgs({
+  const { values, positionals, tokens } = parseArgs({
     args,
     options: {
       "max-content-chars": {
@@ -86,6 +121,7 @@ export function parseCliArgs(args: string[]): CliOptions {
     },
     allowPositionals: true,
     strict: true,
+    tokens: true,
   });
 
   const server: McpServerOptions = {
@@ -138,6 +174,13 @@ export function parseCliArgs(args: string[]): CliOptions {
     };
   } else {
     throw new Error(`Unknown command: ${commandName}`);
+  }
+
+  if (!values.help && !values.version) {
+    const passed = new Set(
+      tokens.flatMap((t) => (t.kind === "option" ? [t.name] : []))
+    );
+    assertOptionsApply(command.name, passed);
   }
 
   return {

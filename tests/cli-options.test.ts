@@ -80,6 +80,25 @@ describe("parseCliArgs", () => {
     expect(() => parseCliArgs(["open"])).toThrow("Unknown command: open");
   });
 
+  it("rejects options that do not apply to the command", () => {
+    expect(() => parseCliArgs(["list", "--offset=100"])).toThrow(
+      "Option --offset does not apply to the list command."
+    );
+    expect(() => parseCliArgs(["read", "--include-url"])).toThrow(
+      "Option --include-url does not apply to the read command."
+    );
+    expect(() => parseCliArgs(["read", "--check-interval=3000"])).toThrow(
+      "Option --check-interval does not apply to the read command."
+    );
+    expect(() => parseCliArgs(["-n", "1"])).toThrow(
+      "Option --index does not apply to the MCP server."
+    );
+  });
+
+  it("does not reject options when showing help", () => {
+    expect(parseCliArgs(["list", "--offset=100", "--help"]).help).toBe(true);
+  });
+
   it("rejects excess positional arguments", () => {
     expect(() => parseCliArgs(["read", "ID:1:2", "extra"])).toThrow(
       "The read command accepts at most one tab ID."
