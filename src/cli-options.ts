@@ -12,12 +12,12 @@ export type CliCommand =
 export type ReadTarget =
   { by: "id"; id: string } | { by: "index"; index: number } | { by: "active" };
 
-export type CliOptions = {
-  server: McpServerOptions;
-  command: CliCommand;
-  help: boolean;
-  version: boolean;
-};
+// Help and version need no valid command line beyond themselves, so they
+// carry no parsed options
+export type CliOptions =
+  | { kind: "help" }
+  | { kind: "version" }
+  | { kind: "run"; server: McpServerOptions; command: CliCommand };
 
 function parseBrowserOption(browser: string): Browser {
   if (browser === "" || browser === "chrome") return "chrome";
@@ -166,6 +166,9 @@ export function parseCliArgs(
     tokens: true,
   });
 
+  if (values.version) return { kind: "version" };
+  if (values.help) return { kind: "help" };
+
   const server: McpServerOptions = {
     applicationName: values["application-name"],
     browser: parseBrowserOption(values["experimental-browser"]),
@@ -187,16 +190,6 @@ export function parseCliArgs(
       1
     ),
   };
-
-  // Help and version need no valid command line beyond themselves
-  if (values.help || values.version) {
-    return {
-      server,
-      command: { name: "serve" },
-      help: values.help,
-      version: values.version,
-    };
-  }
 
   const [commandName, ...commandArgs] = positionals;
   let command: CliCommand;
@@ -225,10 +218,5 @@ export function parseCliArgs(
   );
   assertOptionsApply(command.name, passed);
 
-  return {
-    server,
-    command,
-    help: values.help,
-    version: values.version,
-  };
+  return { kind: "run", server, command };
 }

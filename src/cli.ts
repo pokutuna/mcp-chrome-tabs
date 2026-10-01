@@ -90,11 +90,11 @@ MCP CONFIGURATION EXAMPLE:
 
 async function main(): Promise<void> {
   const cli = parseCliArgs(process.argv.slice(2));
-  if (cli.version) {
+  if (cli.kind === "version") {
     console.log(await packageVersion());
     return;
   }
-  if (cli.help) {
+  if (cli.kind === "help") {
     showHelp();
     return;
   }
