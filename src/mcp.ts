@@ -24,16 +24,30 @@ export type McpServerOptions = {
 };
 
 function isExcludedHost(url: string, excludeHosts: string[]): boolean {
+  // A blank or unparsable URL, such as an empty Safari tab, has no host
+  if (!URL.canParse(url)) return false;
   const u = new URL(url);
   return excludeHosts.some(
     (d) => u.hostname === d || u.hostname.endsWith("." + d)
   );
 }
 
+// Numeric IDs (Chrome, Safari) compare as numbers, others (Arc UUIDs) as text
+function compareIds(a: string, b: string): number {
+  if (/^\d+$/.test(a) && /^\d+$/.test(b)) return Number(a) - Number(b);
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+// Browsers list windows front to back, which changes whenever the user
+// switches windows. Order them by ID (creation order) instead, keeping the tab
+// order within a window, so that an INDEX from `list` still names the same tab
+// after a window switch.
 async function listTabs(opts: McpServerOptions): Promise<Tab[]> {
   const browser = getInterface(opts.browser);
   const tabs = await browser.getTabList(opts.applicationName);
-  return tabs.filter((t) => !isExcludedHost(t.url, opts.excludeHosts));
+  return tabs
+    .filter((t) => !isExcludedHost(t.url, opts.excludeHosts))
+    .sort((a, b) => compareIds(a.windowId, b.windowId));
 }
 
 async function getTab(
@@ -41,7 +55,17 @@ async function getTab(
   opts: McpServerOptions
 ): Promise<TabContent> {
   const browser = getInterface(opts.browser);
-  const raw = await browser.getPageContent(opts.applicationName, tabRef);
+  // Refuse an excluded host before running any script in its page
+  const info = await browser.getTabInfo(opts.applicationName, tabRef);
+  if (isExcludedHost(info.url, opts.excludeHosts)) {
+    throw new Error("Content not available for excluded host");
+  }
+  // Read the tab just resolved, even if the active tab changes meanwhile
+  const raw = await browser.getPageContent(opts.applicationName, {
+    windowId: info.windowId,
+    tabId: info.tabId,
+  });
+  // The tab may have navigated to an excluded host since it was resolved
   if (isExcludedHost(raw.url, opts.excludeHosts)) {
     throw new Error("Content not available for excluded host");
   }
@@ -61,6 +85,78 @@ async function getTab(
       `Failed to extract content: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+}
+
+export async function executeListTabs(
+  options: McpServerOptions,
+  includeUrl: boolean = false
+): Promise<string> {
+  const tabs = await listTabs(options);
+  return view.formatList(tabs, includeUrl);
+}
+
+// The CLI renders a human-readable table; the MCP tool keeps its Markdown list
+export async function executeListTabsForCli(
+  options: McpServerOptions,
+  includeUrl: boolean = false
+): Promise<string> {
+  const tabs = await listTabs(options);
+  return view.formatListForCli(tabs, includeUrl);
+}
+
+export async function executeReadTabContent(
+  options: McpServerOptions,
+  id?: string,
+  startIndex: number = 0,
+  pagination: view.Pagination = view.toolPagination
+): Promise<string> {
+  // An unparsable id, including an empty one, must not fall through to the
+  // active tab; only an omitted id reads it
+  let tabRef: TabRef | null = null;
+  if (id !== undefined) {
+    tabRef = view.parseTabRef(id);
+    if (!tabRef) {
+      throw new Error(
+        `Invalid tab ID: "${id}". Expected ID:<windowId>:<tabId>.`
+      );
+    }
+  }
+  const tab = await getTab(tabRef, options);
+  return view.formatTabContent(
+    tab,
+    startIndex,
+    options.maxContentChars,
+    pagination
+  );
+}
+
+// Resolves against a freshly fetched list, so the index means the same thing it
+// would in a `list` run right now -- not in whatever listing the user last saw.
+export async function executeReadTabContentByIndex(
+  options: McpServerOptions,
+  index: number,
+  startIndex: number = 0,
+  pagination: view.Pagination = view.toolPagination
+): Promise<string> {
+  const tabs = await listTabs(options);
+  const target = tabs[index - 1];
+  if (!target) {
+    throw new Error(
+      tabs.length === 0
+        ? "No open tabs."
+        : `No tab at index ${index}. Currently 1-${tabs.length}; run "list" for the current numbering.`
+    );
+  }
+  const tab = await getTab(
+    { windowId: target.windowId, tabId: target.tabId },
+    options
+  );
+  return view.formatTabContent(
+    tab,
+    startIndex,
+    options.maxContentChars,
+    pagination
+  );
 }
 
 export async function packageVersion(): Promise<string> {
@@ -122,12 +218,11 @@ export async function createMcpServer(
     },
     async (args) => {
       const { includeUrl } = args;
-      const tabs = await listTabs(options);
       return {
         content: [
           {
             type: "text",
-            text: view.formatList(tabs, includeUrl),
+            text: await executeListTabs(options, includeUrl),
           },
         ],
       };
@@ -160,16 +255,11 @@ export async function createMcpServer(
     },
     async (args) => {
       const { id, startIndex } = args;
-      const tab = await getTab(id ? view.parseTabRef(id) : null, options);
       return {
         content: [
           {
             type: "text",
-            text: view.formatTabContent(
-              tab,
-              startIndex,
-              options.maxContentChars
-            ),
+            text: await executeReadTabContent(options, id, startIndex),
           },
         ],
       };
@@ -282,7 +372,7 @@ export async function createMcpServer(
       } catch (error) {
         console.error("Error during periodic tab list update:", error);
       }
-      // The connection may have closed while the AppleScript call was in flight
+      // The connection may have closed while the osascript call was in flight
       if (stopped) return;
       // Use setTimeout instead of setInterval to avoid overlapping calls
       timer = setTimeout(check, options.checkInterval);

@@ -1,0 +1,135 @@
+import { describe, expect, it } from "vitest";
+import { parseCliArgs } from "../src/cli-options.js";
+
+// Most cases parse a command; help and version are asserted on directly
+function run(args: string[], env?: NodeJS.ProcessEnv) {
+  const cli = parseCliArgs(args, env);
+  if (cli.kind !== "run") throw new Error(`Parsed as ${cli.kind}`);
+  return cli;
+}
+
+describe("parseCliArgs", () => {
+  it("starts the MCP server when no command is given", () => {
+    const parsed = run([]);
+
+    expect(parsed.command).toEqual({ name: "serve" });
+    expect(parsed.server.applicationName).toBe("Google Chrome");
+  });
+
+  it("parses the list command", () => {
+    const parsed = run(
+      ["list", "--include-url", "--exclude-hosts=example.com, test.com"],
+      {}
+    );
+
+    expect(parsed.command).toEqual({ name: "list", includeUrl: true });
+    expect(parsed.server.excludeHosts).toEqual(["example.com", "test.com"]);
+  });
+
+  it("excludes the hosts in the environment variable as well", () => {
+    const env = { MCP_CHROME_TABS_EXCLUDE_HOSTS: "mail.test, example.com" };
+
+    expect(run(["list"], env).server.excludeHosts).toEqual([
+      "mail.test",
+      "example.com",
+    ]);
+    expect(
+      run(["--exclude-hosts=example.com,bank.test"], env).server.excludeHosts
+    ).toEqual(["mail.test", "example.com", "bank.test"]);
+  });
+
+  it("parses the read command with a tab ID and pagination", () => {
+    const parsed = run([
+      "read",
+      "ID:1001:2001",
+      "--offset=500",
+      "--max-content-chars=1000",
+    ]);
+
+    expect(parsed.command).toEqual({
+      name: "read",
+      target: { by: "id", id: "ID:1001:2001" },
+      offset: 500,
+    });
+    expect(parsed.server.maxContentChars).toBe(1000);
+  });
+
+  it("rejects a numeric option that is not an integer in range", () => {
+    expect(() => run(["read", "1", "--offset=abc"])).toThrow(
+      'Invalid --offset: "abc". Expected an integer of 0 or more.'
+    );
+    expect(() => run(["--max-content-chars=0"])).toThrow(
+      'Invalid --max-content-chars: "0". Expected an integer of 1 or more.'
+    );
+    // Any integer in range is taken as given; there is no floor beyond it
+    expect(run(["--extraction-timeout=500"]).server.extractionTimeout).toBe(
+      500
+    );
+  });
+
+  it("reads the active tab only when asked with --active", () => {
+    expect(run(["read", "--active"]).command).toEqual({
+      name: "read",
+      target: { by: "active" },
+      offset: 0,
+    });
+    expect(() => run(["read"])).toThrow(
+      "Specify a tab: pass an ID, an INDEX, or --active."
+    );
+  });
+
+  it("takes a bare number as an INDEX", () => {
+    expect(run(["read", "3"]).command).toEqual({
+      name: "read",
+      target: { by: "index", index: 3 },
+      offset: 0,
+    });
+  });
+
+  it("rejects a tab argument that is neither an ID nor an INDEX", () => {
+    // "" must not fall through to the active tab
+    for (const arg of ["", "0", "-1", "1.5", "abc", "1001:2001"]) {
+      expect(() => run(["read", "--", arg])).toThrow(`Invalid tab: "${arg}"`);
+    }
+  });
+
+  it("rejects a tab together with --active", () => {
+    expect(() => run(["read", "1", "--active"])).toThrow(
+      "Pass either a tab ID or INDEX, or --active, not both."
+    );
+  });
+
+  it("rejects unknown commands", () => {
+    expect(() => run(["open"])).toThrow("Unknown command: open");
+  });
+
+  it("rejects options that do not apply to the command", () => {
+    expect(() => run(["list", "--offset=100"])).toThrow(
+      "Option --offset does not apply to the list command."
+    );
+    expect(() => run(["read", "--active", "--include-url"])).toThrow(
+      "Option --include-url does not apply to the read command."
+    );
+    expect(() => run(["--active"])).toThrow(
+      "Option --active does not apply to the MCP server."
+    );
+  });
+
+  it("shows help or version without parsing the other options", () => {
+    expect(parseCliArgs(["list", "--offset=100", "--help"])).toEqual({
+      kind: "help",
+    });
+    expect(parseCliArgs(["--help", "--max-content-chars=oops"])).toEqual({
+      kind: "help",
+    });
+    expect(parseCliArgs(["--version", "--experimental-browser=nope"])).toEqual({
+      kind: "version",
+    });
+  });
+
+  it("rejects excess positional arguments", () => {
+    expect(() => run(["read", "ID:1:2", "extra"])).toThrow(
+      "The read command accepts at most one tab."
+    );
+  });
+});

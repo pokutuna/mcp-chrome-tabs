@@ -1,15 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { createMcpServer, type McpServerOptions } from "../src/mcp.js";
+import {
+  createMcpServer,
+  executeReadTabContent,
+  executeReadTabContentByIndex,
+  type McpServerOptions,
+} from "../src/mcp.js";
 import type {
   Tab,
   TabContent,
   BrowserInterface,
+  TabRef,
 } from "../src/browser/browser.js";
 
 // Mock the getInterface function from browser.js
+// getTabInfo resolves a given ref as-is and the active tab to ID:1001:2001
 const mockBrowserInterface: BrowserInterface = {
   getTabList: vi.fn(),
+  getTabInfo: vi.fn(async (_app: string, tab?: TabRef | null) => ({
+    windowId: tab?.windowId ?? "1001",
+    tabId: tab?.tabId ?? "2001",
+    title: "Resolved",
+    url: "https://example.com/page",
+  })),
   getPageContent: vi.fn(),
   openURL: vi.fn(),
 };
@@ -94,6 +107,27 @@ describe("MCP Server", () => {
   });
 
   describe("list_tabs tool", () => {
+    it("orders windows by ID so that switching windows does not reorder tabs", async () => {
+      // The browser lists the front window first; here window 1002 is in front
+      vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue([
+        mockTabs[2],
+        mockTabs[0],
+        mockTabs[1],
+      ]);
+
+      const result = await client.callTool({
+        name: "list_tabs",
+        arguments: {},
+      });
+
+      const text = (result.content as any)[0].text;
+      expect(text.split("\n").slice(1)).toEqual([
+        "- ID:1001:2001 Example Page (example.com)",
+        "- ID:1001:2002 GitHub (github.com)",
+        "- ID:1002:2003 Test Site (test.com)",
+      ]);
+    });
+
     it("should return all tabs when no domains are excluded", async () => {
       vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
 
@@ -510,5 +544,131 @@ describe("MCP Server", () => {
         expect(githubTab).toBeUndefined();
       });
     });
+  });
+});
+
+describe("executeReadTabContent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
+      mockPageContent
+    );
+  });
+
+  it("rejects a malformed tab ID instead of reading the active tab", async () => {
+    await expect(
+      executeReadTabContent(defaultTestOptions, "not-a-tab-ref")
+    ).rejects.toThrow('Invalid tab ID: "not-a-tab-ref"');
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("rejects an empty tab ID instead of reading the active tab", async () => {
+    await expect(executeReadTabContent(defaultTestOptions, "")).rejects.toThrow(
+      'Invalid tab ID: ""'
+    );
+    expect(mockBrowserInterface.getTabInfo).not.toHaveBeenCalled();
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("passes a parsed tab ref through for a well-formed ID", async () => {
+    await executeReadTabContent(defaultTestOptions, "ID:1001:2001");
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1001", tabId: "2001" }
+    );
+  });
+});
+
+describe("excluded hosts are checked before reading the page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
+      mockPageContent
+    );
+  });
+
+  it("refuses an excluded host without reading the page", async () => {
+    vi.mocked(mockBrowserInterface.getTabInfo).mockResolvedValueOnce({
+      windowId: "1001",
+      tabId: "2001",
+      title: "Secret",
+      url: "https://secret.example.com/inbox",
+    });
+
+    await expect(
+      executeReadTabContent(
+        { ...defaultTestOptions, excludeHosts: ["example.com"] },
+        "ID:1001:2001"
+      )
+    ).rejects.toThrow("Content not available for excluded host");
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("reads the active tab it resolved, not whichever is active later", async () => {
+    vi.mocked(mockBrowserInterface.getTabInfo).mockResolvedValueOnce({
+      windowId: "1002",
+      tabId: "2003",
+      title: "Active",
+      url: mockPageContent.url,
+    });
+
+    await executeReadTabContent(defaultTestOptions);
+
+    expect(mockBrowserInterface.getTabInfo).toHaveBeenCalledWith(
+      "Google Chrome",
+      null
+    );
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1002", tabId: "2003" }
+    );
+  });
+});
+
+describe("executeReadTabContentByIndex", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue(mockTabs);
+    vi.mocked(mockBrowserInterface.getPageContent).mockResolvedValue(
+      mockPageContent
+    );
+  });
+
+  it("resolves a 1-based index to that tab's ref", async () => {
+    await executeReadTabContentByIndex(defaultTestOptions, 3);
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1002", tabId: "2003" }
+    );
+  });
+
+  it("resolves against the filtered list, not the raw one", async () => {
+    // github.com is excluded, so index 2 is the third raw tab
+    await executeReadTabContentByIndex(
+      { ...defaultTestOptions, excludeHosts: ["github.com"] },
+      2
+    );
+
+    expect(mockBrowserInterface.getPageContent).toHaveBeenCalledWith(
+      "Google Chrome",
+      { windowId: "1002", tabId: "2003" }
+    );
+  });
+
+  it("reports the valid range for an out-of-range index", async () => {
+    await expect(
+      executeReadTabContentByIndex(defaultTestOptions, 99)
+    ).rejects.toThrow("No tab at index 99. Currently 1-3");
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
+  it("reports when there are no tabs at all", async () => {
+    vi.mocked(mockBrowserInterface.getTabList).mockResolvedValue([]);
+
+    await expect(
+      executeReadTabContentByIndex(defaultTestOptions, 1)
+    ).rejects.toThrow("No open tabs.");
   });
 });

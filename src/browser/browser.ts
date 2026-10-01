@@ -5,6 +5,8 @@ export type TabRef = { windowId: string; tabId: string };
 export type Tab = TabRef & {
   title: string;
   url: string;
+  // Set by getTabList: the tab that reading the active tab would return
+  active?: boolean;
 };
 
 export type TabContent = {
@@ -15,6 +17,9 @@ export type TabContent = {
 
 export type BrowserInterface = {
   getTabList(applicationName: string): Promise<Tab[]>;
+  // Resolves a tab without running JavaScript in its page, so the caller can
+  // refuse an excluded host before touching the page
+  getTabInfo(applicationName: string, tab?: TabRef | null): Promise<Tab>;
   getPageContent(
     applicationName: string,
     tab?: TabRef | null

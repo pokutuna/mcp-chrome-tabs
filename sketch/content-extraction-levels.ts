@@ -83,53 +83,18 @@ async function extractContentWithLevels(
 }
 
 /**
- * 現在のアクティブタブからコンテンツを取得する (AppleScript 経由)
+ * 現在のアクティブタブからコンテンツを取得する
  */
 async function getCurrentTabContent(
   applicationName: string = "Google Chrome"
 ): Promise<{ title: string; url: string; html: string } | null> {
   try {
-    const { executeAppleScript, separator } = await import(
-      "../src/browser/osascript.js"
+    const { chromeBrowser } = await import("../src/browser/chrome.js");
+    const { title, url, content } = await chromeBrowser.getPageContent(
+      applicationName,
+      null
     );
-    const sep = separator();
-
-    // AppleScript でアクティブタブのコンテンツを直接取得
-    const appleScript = `
-      try
-        tell application "${applicationName}"
-          repeat with w in windows
-            tell w
-              set t to tab (active tab index)
-              if URL of t is not "about:blank" then
-                tell t
-                  set tabTitle to title
-                  set tabURL to URL
-                  set tabContent to execute javascript "document.documentElement.outerHTML"
-                  return tabTitle & "${sep}" & tabURL & "${sep}" & tabContent
-                end tell
-              end if
-            end tell
-          end repeat
-          error "No active tab found"
-        end tell
-      on error errMsg
-        return "ERROR" & "${sep}" & errMsg
-      end try
-    `;
-
-    const result = await executeAppleScript(appleScript);
-    if (result.startsWith(`ERROR${sep}`)) {
-      throw new Error(result.split(sep)[1]);
-    }
-
-    const parts = result.split(sep).map((part) => part.trim());
-    if (parts.length < 3) {
-      throw new Error("Failed to read the tab content");
-    }
-
-    const [title, url, html] = parts;
-    return { title, url, html };
+    return { title, url, html: content };
   } catch (error) {
     console.error("❌ Error getting current tab content:", error);
     return null;

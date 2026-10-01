@@ -1,54 +1,72 @@
 #!/usr/bin/env node
 
-import { parseArgs } from "util";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import { createMcpServer, McpServerOptions, packageVersion } from "./mcp.js";
-import type { Browser } from "./browser/browser.js";
-
-type CliOptions = McpServerOptions & {
-  help: boolean;
-  version: boolean;
-};
+import {
+  createMcpServer,
+  executeListTabsForCli,
+  executeReadTabContent,
+  executeReadTabContentByIndex,
+  packageVersion,
+} from "./mcp.js";
+import { parseCliArgs } from "./cli-options.js";
+import { cliPagination, escapeForTerminal } from "./view.js";
 
 function showHelp(): void {
   console.log(
     `
-MCP Chrome Tabs Server
+mcp-chrome-tabs - Read browser tabs on macOS, as an MCP server or from the CLI
 
 USAGE:
-  mcp-chrome-tabs [OPTIONS]
+  mcp-chrome-tabs [OPTIONS]                         Start the MCP server (stdio)
+  mcp-chrome-tabs list [OPTIONS]                    List open tabs
+  mcp-chrome-tabs read <ID | INDEX | --active> [OPTIONS]
+                                                    Read the main content of a tab
 
-CONTENT EXTRACTION OPTIONS:
+EXAMPLES:
+  mcp-chrome-tabs list                              Prints: [INDEX] ID TITLE DOMAIN
+                                                    (* marks the active tab)
+  mcp-chrome-tabs read --active                     Read the active tab
+  mcp-chrome-tabs read ID:12345:67890               Read the tab with this ID
+  mcp-chrome-tabs read 2                            Read the tab at INDEX 2
+  mcp-chrome-tabs read ID:12345:67890 --offset=20000
+                                                    Continue a truncated read
+
+  INDEX numbers one listing only. It is resolved again when read runs and
+  shifts when tabs open or close (switching windows does not renumber it).
+  Pass the ID to refer to a tab reliably.
+
+LIST OPTIONS:
+  --include-url               Show the full URL instead of the domain
+
+READ OPTIONS:
+  --active                    Read the tab you are looking at now
+  --offset=<chars>            Start reading at this character offset
+                              (default: 0)
+
+CONTENT OPTIONS (read and MCP server):
   --max-content-chars=<chars> Maximum content characters per single read
                               (default: 20000)
-
-  --extraction-timeout=<ms>   Timeout for content extraction worker in milliseconds
+  --extraction-timeout=<ms>   Timeout for content extraction in milliseconds
                               (default: 20000)
-                              Example: 5000
 
-  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
-                              (default: "")
-                              Example: "github.com,example.com,test.com"
-
-RESOURCE OPTIONS:
-  --check-interval=<ms>       Interval for checking browser tabs in milliseconds
-                              and sending listChanged notifications
+MCP SERVER OPTIONS:
+  --check-interval=<ms>       Interval for checking browser tabs and sending
+                              listChanged notifications
                               (default: 0 disabled, set to 3000 for 3 seconds)
-                              Example: 3000
 
-BROWSER OPTIONS:
-  --application-name=<name>   Application name to control via AppleScript
+COMMON OPTIONS (all commands):
+  --exclude-hosts=<hosts>     Comma-separated list of hosts to exclude
+                              Example: "github.com,example.com"
+                              Hosts in $MCP_CHROME_TABS_EXCLUDE_HOSTS are
+                              excluded as well
+  --application-name=<name>   Application name to control
                               (default: "Google Chrome")
                               Example: "Google Chrome Canary"
-
   --experimental-browser=<b>  Browser implementation to use
                               (default: "chrome")
                               Options: "chrome", "safari", "arc"
-
-OTHER OPTIONS:
-  --help                      Show this help message
-  --version                   Show version number
-
+  -h, --help                  Show this help message
+  -v, --version               Show version number
 
 REQUIREMENTS:
   Chrome:
@@ -70,99 +88,56 @@ MCP CONFIGURATION EXAMPLE:
   );
 }
 
-function parseCliArgs(args: string[]): CliOptions {
-  const { values } = parseArgs({
-    args,
-    options: {
-      "max-content-chars": {
-        type: "string",
-        default: "20000",
-      },
-      "extraction-timeout": {
-        type: "string",
-        default: "20000",
-      },
-      "check-interval": {
-        type: "string",
-        default: "0",
-      },
-      "exclude-hosts": {
-        type: "string",
-        default: "",
-      },
-      "application-name": {
-        type: "string",
-        default: "Google Chrome",
-      },
-      "experimental-browser": {
-        type: "string",
-        default: "",
-      },
-      help: {
-        type: "boolean",
-        default: false,
-      },
-      version: {
-        type: "boolean",
-        default: false,
-      },
-    },
-    allowPositionals: false,
-    tokens: true,
-  });
+async function main(): Promise<void> {
+  const cli = parseCliArgs(process.argv.slice(2));
+  if (cli.kind === "version") {
+    console.log(await packageVersion());
+    return;
+  }
+  if (cli.kind === "help") {
+    showHelp();
+    return;
+  }
 
-  function parseBrowserOption(browser: string): Browser {
-    if (browser === "" || browser === "chrome") return "chrome";
-    if (browser === "safari") return "safari";
-    if (browser === "arc") return "arc";
-    throw new Error(
-      `Invalid --experimental-browser option: "${browser}". Use "chrome", "safari", or "arc".`
+  // list escapes page titles per cell to keep its columns aligned
+  if (cli.command.name === "list") {
+    console.log(
+      await executeListTabsForCli(cli.server, cli.command.includeUrl)
+    );
+    return;
+  }
+
+  if (cli.command.name === "read") {
+    const { target, offset } = cli.command;
+    const content =
+      target.by === "index"
+        ? await executeReadTabContentByIndex(
+            cli.server,
+            target.index,
+            offset,
+            cliPagination
+          )
+        : await executeReadTabContent(
+            cli.server,
+            target.by === "id" ? target.id : undefined,
+            offset,
+            cliPagination
+          );
+    // The title, URL and content all come from the page
+    console.log(escapeForTerminal(content));
+    return;
+  }
+
+  // Run by hand in a terminal, the server just waits on stdin and looks hung
+  if (process.stdin.isTTY) {
+    console.error(
+      "Started the MCP server on stdio. Press Ctrl+C to stop; run with --help for the list and read commands."
     );
   }
 
-  function parseIntWithDefault(
-    value: string,
-    defaultValue: number,
-    minValue: number = 0
-  ): number {
-    const parsed = parseInt(value, 10);
-    if (isNaN(parsed) || parsed < minValue) return defaultValue;
-    return parsed;
-  }
-
-  const parsed: CliOptions = {
-    applicationName: values["application-name"],
-    browser: parseBrowserOption(values["experimental-browser"]),
-    excludeHosts: values["exclude-hosts"]
-      .split(",")
-      .map((d) => d.trim())
-      .filter(Boolean),
-    checkInterval: parseIntWithDefault(values["check-interval"], 0, 0),
-    maxContentChars: parseIntWithDefault(values["max-content-chars"], 20000, 1),
-    extractionTimeout: parseIntWithDefault(
-      values["extraction-timeout"],
-      20000,
-      1000
-    ),
-    help: values.help,
-    version: values.version,
-  };
-  return parsed;
-}
-
-async function main(): Promise<void> {
-  const options = parseCliArgs(process.argv.slice(2));
-  if (options.version) {
-    console.log(await packageVersion());
-    process.exit(0);
-  }
-  if (options.help) {
-    showHelp();
-    process.exit(0);
-  }
   // serveStdio picks the protocol era from the opening exchange, so the same
   // factory serves both 2025-era and 2026-07-28 clients
-  const handle = serveStdio(() => createMcpServer(options));
+  const handle = serveStdio(() => createMcpServer(cli.server));
 
   const shutdown = async () => {
     await handle.close();
@@ -175,4 +150,7 @@ async function main(): Promise<void> {
   process.stdin.on("end", shutdown);
 }
 
-await main().catch(console.error);
+await main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+});

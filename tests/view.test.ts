@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { formatTabContent } from "../src/view.js";
-import type { TabContent } from "../src/browser/browser.js";
+import {
+  cliPagination,
+  escapeForTerminal,
+  formatListForCli,
+  formatTabContent,
+} from "../src/view.js";
+import type { Tab, TabContent } from "../src/browser/browser.js";
 
 describe("formatTabContent", () => {
   const mockTab: TabContent = {
@@ -49,6 +54,13 @@ describe("formatTabContent", () => {
       expect(result).toContain("Content truncated");
       expect(result).toContain("truncated: true");
       expect(result).toContain("startIndex of 100");
+    });
+
+    it("names the start position in CLI terms for CLI pagination", () => {
+      const result = formatTabContent(mockTab, 50, 100, cliPagination);
+      expect(result).toContain("offset: 50");
+      expect(result).toContain("Read with --offset=150");
+      expect(result).not.toContain("startIndex");
     });
 
     it("should handle startIndex correctly", () => {
@@ -168,5 +180,107 @@ describe("formatTabContent", () => {
       expect(collectedContent).toBe(longContent);
       expect(iterations).toBeLessThan(maxIterations); // Ensure we didn't hit safety guard
     });
+  });
+});
+
+describe("formatListForCli", () => {
+  const tabs: Tab[] = [
+    {
+      windowId: "1001",
+      tabId: "2001",
+      title: "Example",
+      url: "https://example.com/page",
+    },
+    {
+      windowId: "1001",
+      tabId: "2002",
+      title: "テスト",
+      url: "https://test.com:8080/a",
+    },
+  ];
+
+  it("shows index, ID, title and domain per row", () => {
+    const lines = formatListForCli(tabs).split("\n");
+
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain("[1]");
+    expect(lines[0]).toContain("ID:1001:2001");
+    expect(lines[0]).toContain("Example");
+    expect(lines[0]).toContain("example.com");
+    expect(lines[1]).toContain("[2]");
+    expect(lines[1]).toContain("test.com:8080");
+  });
+
+  it("shows the full URL instead of the domain when includeUrl is set", () => {
+    const lines = formatListForCli(tabs, true).split("\n");
+
+    expect(lines[0]).toContain("https://example.com/page");
+  });
+
+  it("aligns the domain column across wide (CJK) titles", () => {
+    const lines = formatListForCli(tabs).split("\n");
+    const width = (text: string) =>
+      [...text].reduce(
+        (sum, char) =>
+          sum +
+          (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(char)
+            ? 2
+            : 1),
+        0
+      );
+
+    const starts = lines.map((line) => {
+      const domain = line.trimEnd().split(/\s+/).pop()!;
+      return width(line.slice(0, line.lastIndexOf(domain)));
+    });
+    expect(starts[0]).toBe(starts[1]);
+  });
+
+  it("reports when no tabs are open", () => {
+    expect(formatListForCli([])).toBe("No open tabs.");
+  });
+
+  it("cuts a long title so that it does not wrap the row", () => {
+    const tab: Tab = {
+      windowId: "1",
+      tabId: "2",
+      title: "あ".repeat(40),
+      url: "https://example.com/",
+    };
+
+    expect(formatListForCli([tab])).toBe(
+      `  [1]  ID:1:2  ${"あ".repeat(29)}…  example.com`
+    );
+  });
+
+  it("marks the active tab with a leading *", () => {
+    const lines = formatListForCli([
+      { ...tabs[0], active: false },
+      { ...tabs[1], active: true },
+    ]).split("\n");
+
+    expect(lines[0].startsWith("  [1]")).toBe(true);
+    expect(lines[1].startsWith("* [2]")).toBe(true);
+  });
+});
+
+describe("terminal escaping", () => {
+  it("shows control characters as \\xNN but keeps tabs and newlines", () => {
+    expect(escapeForTerminal("a\x1b]52;c;aGk=\x07b\tc\nd\re\x9b")).toBe(
+      "a\\x1b]52;c;aGk=\\x07b\tc\nd\\x0de\\x9b"
+    );
+  });
+
+  it("keeps a listed title on one row and inert", () => {
+    const tab: Tab = {
+      windowId: "1",
+      tabId: "2",
+      title: "evil\x1b[2J\nsecond line",
+      url: "https://example.com/",
+    };
+
+    expect(formatListForCli([tab])).toBe(
+      "  [1]  ID:1:2  evil\\x1b[2J second line  example.com"
+    );
   });
 });
