@@ -110,9 +110,10 @@ export async function executeReadTabContent(
   startIndex: number = 0,
   pagination: view.Pagination = view.toolPagination
 ): Promise<string> {
-  // An unparsable id must not fall through to the active tab
+  // An unparsable id, including an empty one, must not fall through to the
+  // active tab; only an omitted id reads it
   let tabRef: TabRef | null = null;
-  if (id) {
+  if (id !== undefined) {
     tabRef = view.parseTabRef(id);
     if (!tabRef) {
       throw new Error(

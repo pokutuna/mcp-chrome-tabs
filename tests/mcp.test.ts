@@ -562,6 +562,14 @@ describe("executeReadTabContent", () => {
     expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
   });
 
+  it("rejects an empty tab ID instead of reading the active tab", async () => {
+    await expect(executeReadTabContent(defaultTestOptions, "")).rejects.toThrow(
+      'Invalid tab ID: ""'
+    );
+    expect(mockBrowserInterface.getTabInfo).not.toHaveBeenCalled();
+    expect(mockBrowserInterface.getPageContent).not.toHaveBeenCalled();
+  });
+
   it("passes a parsed tab ref through for a well-formed ID", async () => {
     await executeReadTabContent(defaultTestOptions, "ID:1001:2001");
 
