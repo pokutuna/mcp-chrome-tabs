@@ -41,14 +41,14 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@modelcontextprotocol/client": "^2.1.0",
-    "@playwright/test": "^1.63.0",
-    "@types/node": "^26.6.2",
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
     "playwright": "^1.54.1",
-    "prettier": "^3.9.9",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "~7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.4"
   },
   "engines": {
     "node": ">=22"
