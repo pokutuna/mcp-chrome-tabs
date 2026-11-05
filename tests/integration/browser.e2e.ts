@@ -121,6 +121,17 @@ const test = base.extend<MyFixtures>({
   },
 });
 
+// Match by parsed host and path, not by substring: "example.com" is also a
+// substring of "https://example.com.evil.test/".
+function isPage(url: string, host: string, pathPrefix = "/"): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === host && parsed.pathname.startsWith(pathPrefix);
+  } catch {
+    return false;
+  }
+}
+
 test("getTabList", async ({ context, applicationName, browserInterface }) => {
   const pages = [
     "http://example.com",
@@ -134,9 +145,9 @@ test("getTabList", async ({ context, applicationName, browserInterface }) => {
   await expect(async () => {
     const tabs = await browserInterface.getTabList(applicationName);
     expect(tabs.length).toBeGreaterThanOrEqual(2);
-    expect(tabs.find((t) => t.url.includes("example.com"))).toBeDefined();
+    expect(tabs.find((t) => isPage(t.url, "example.com"))).toBeDefined();
     expect(
-      tabs.find((t) => t.url.includes("github.com/pokutuna/mcp-chrome-tabs"))
+      tabs.find((t) => isPage(t.url, "github.com", "/pokutuna/mcp-chrome-tabs"))
     ).toBeDefined();
   }).toPass();
 });
@@ -150,7 +161,7 @@ test("getTabContent with reference", async ({
   await page.goto("http://example.com", { waitUntil: "domcontentloaded" });
 
   const tabs = await browserInterface.getTabList(applicationName);
-  const tab = tabs.find((t) => t.url.includes("example.com"));
+  const tab = tabs.find((t) => isPage(t.url, "example.com"));
   expect(tab).toBeDefined();
   if (!tab) throw new Error("Tab not found");
 
@@ -192,14 +203,18 @@ test("openURL", async ({ applicationName, browserInterface }) => {
   await expect(async () => {
     const tabs = await browserInterface.getTabList(applicationName);
     // Verify the tab exists in the tab list
-    expect(tabs.some((t) => t.url.includes("github.com/trending"))).toBe(true);
+    expect(tabs.some((t) => isPage(t.url, "github.com", "/trending"))).toBe(
+      true
+    );
 
     // Verify the returned TabRef matches a tab in the list
     const matchingTab = tabs.find(
       (t) => t.windowId === tabRef.windowId && t.tabId === tabRef.tabId
     );
     expect(matchingTab).toBeDefined();
-    expect(matchingTab?.url).toContain("github.com/trending");
+    expect(isPage(matchingTab?.url ?? "", "github.com", "/trending")).toBe(
+      true
+    );
   }).toPass();
 
   // Test that we can immediately read content from the returned tab reference
@@ -210,5 +225,5 @@ test("openURL", async ({ applicationName, browserInterface }) => {
   expect(content).toHaveProperty("title");
   expect(content).toHaveProperty("url");
   expect(content).toHaveProperty("content");
-  expect(content.url).toContain("github.com/trending");
+  expect(isPage(content.url, "github.com", "/trending")).toBe(true);
 });
