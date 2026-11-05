@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-06
+
 ### Added
 
 - `list` and `read` commands for reading tabs from the command line without an MCP client. See "Who Can Read Your Tabs" in the README for how they relate to MCP tool approval and `--exclude-hosts`
 - Hints for common osascript failures, such as missing Automation permission, an application that cannot be found, a closed tab, or a timeout. The original error message and code are kept
 - A note on stderr when the MCP server is started by hand from a terminal
 - `MCP_CHROME_TABS_EXCLUDE_HOSTS` environment variable, excluded in addition to `--exclude-hosts`, so that the MCP server and command line runs can share the same exclusions
+- Support for the MCP 2026-07-28 protocol revision. Clients on the 2025-11-25 revision keep working as before (#157)
 
 ### Changed
 
@@ -23,11 +26,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `list_tabs` orders windows by ID (creation order) instead of front to back, so the order no longer changes when the user switches windows
 - Reading tabs reports a browser that is not running instead of launching it; `open_in_new_tab` still launches it
 - Numeric options that are not integers are rejected instead of falling back to the default
+- Migrate from `@modelcontextprotocol/sdk` 1.x to `@modelcontextprotocol/server` 2.4.0 (#156). Tool input schemas are advertised as JSON Schema 2020-12 instead of draft-07
+- Update defuddle from 0.19.1 to 0.19.6 (extraction results may differ slightly for some pages; Markdown output now escapes characters such as `<` that could be read as markup)
+- Update zod from 4.4.3 to 4.6.7
 
 ### Fixed
 
 - Control the user's Chrome rather than another Chrome process started later, such as a headless Chrome launched by Playwright MCP (Chrome is now driven by JXA instead of AppleScript)
 - Refuse excluded hosts before running JavaScript in the page
+- With `--check-interval` enabled, the server now exits when the client disconnects (#157)
+
+### Security
+
+- defuddle 0.19.6 removes unsafe links and event handlers from HTML kept in the Markdown output (GHSA-6frv-jcwm-xqcj)
 
 ## [0.8.3] - 2026-07-16
 
@@ -168,6 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Chrome browser support via AppleScript automation
 
 [Unreleased]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.3...HEAD
+[0.9.0]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/pokutuna/mcp-chrome-tabs/compare/v0.8.0...v0.8.1
