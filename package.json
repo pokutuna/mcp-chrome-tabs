@@ -42,13 +42,13 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.4.0",
-    "@playwright/test": "^1.64.1",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^26.6.6",
     "playwright": "^1.54.1",
     "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "~7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "engines": {
     "node": ">=22"
