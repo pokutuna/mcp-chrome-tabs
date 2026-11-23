@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.4.0",
-    "defuddle": "^0.19.6",
+    "defuddle": "^0.19.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {
